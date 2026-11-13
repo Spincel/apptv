@@ -184,46 +184,11 @@
         </button>
       </form>
 
-      <div style="margin-top: 24px; font-size: 0.82rem; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 16px;">
+      <div style="margin-top: 24px; font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 16px;">
         <a href="javascript:void(0)" onclick="cancel2faToLogin()" style="color: #38bdf8; text-decoration: none;">
-          ← Volver al login
-        </a>
-        <a href="javascript:void(0)" onclick="toggleEmergencyMasterLogin()" style="color: var(--text-muted); text-decoration: none;">
-          🔑 Clave de emergencia
+          ← Volver a ingresar usuario y contraseña
         </a>
       </div>
-    </div>
-  </div>
-
-  <!-- GATE 3: Emergency Master Password (Fallback) -->
-  <div id="adminEmergencyGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
-      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px;">
-        🔑
-      </div>
-      <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 8px;">Acceso de Emergencia</h2>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
-        Usa tu Contraseña Maestra de Respaldo por si perdiste tu celular:
-      </p>
-
-      <form onsubmit="handleMasterPasswordLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
-        <div class="form-group">
-          <label class="form-label" style="font-size: 0.85rem;">Contraseña Maestra</label>
-          <input type="password" id="emergencyPasswordInput" class="form-input" placeholder="Ingresa tu contraseña de respaldo" required autofocus style="font-size: 1rem; padding: 12px 16px;">
-        </div>
-
-        <div id="emergencyLoginError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-          ⚠️ Contraseña incorrecta.
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 1rem; justify-content: center;">
-          Ingresar
-        </button>
-
-        <button type="button" onclick="cancelEmergencyLogin()" class="btn btn-secondary" style="padding: 10px; font-size: 0.85rem; justify-content: center;">
-          ← Volver
-        </button>
-      </form>
     </div>
   </div>
 
@@ -409,18 +374,6 @@
           <div id="status2faCard" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
             <!-- Rendered by update2faSettingsUI() -->
           </div>
-
-          <!-- Cambiar contraseña de respaldo -->
-          <div class="form-group">
-            <label class="form-label">Contraseña Maestra de Emergencia</label>
-            <div style="display: flex; gap: 10px;">
-              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Nueva clave de emergencia">
-              <button type="button" onclick="updateMasterPin()" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
-                Actualizar Clave
-              </button>
-            </div>
-            <span class="form-help">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia sin el código 2FA.</span>
-          </div>
         </div>
 
       </div>
@@ -504,7 +457,6 @@
   <!-- ================= LOGIC & RFC 6238 TOTP ENGINE ================= -->
   <script>
     const STORAGE_KEY = "smartertv_admin_licenses";
-    const MASTER_PIN_KEY = "smartertv_admin_master_pin";
     const ADMIN_USER_KEY = "smartertv_admin_username";
     const ADMIN_PASS_KEY = "smartertv_admin_password";
     const AUTH_2FA_KEY = "smartertv_2fa_enabled";
@@ -512,7 +464,6 @@
 
     const DEFAULT_ADMIN_USER = "admin";
     const DEFAULT_ADMIN_PASS = "admin2026";
-    const DEFAULT_MASTER_PIN = "admin2026";
     // Standard RFC 4648 Base32 secret (16 chars, only A-Z and 2-7)
     const DEFAULT_TOTP_SECRET = "KEOPSIPTVSEC2345";
 
@@ -595,14 +546,12 @@
       const isAuth = isSessionUnlocked || sessionStorage.getItem("smartertv_admin_session") === "active";
       const userPassGate = document.getElementById("adminUserPassLoginGate");
       const totpGate = document.getElementById("admin2faLoginGate");
-      const emergencyGate = document.getElementById("adminEmergencyGate");
       const content = document.getElementById("adminProtectedContent");
       const navTools = document.getElementById("adminNavbarTools");
 
       if (isAuth) {
         if (userPassGate) userPassGate.style.display = "none";
         if (totpGate) totpGate.style.display = "none";
-        if (emergencyGate) emergencyGate.style.display = "none";
         if (content) content.style.display = "block";
         if (navTools) navTools.style.display = "flex";
         initAdminData();
@@ -611,7 +560,6 @@
         if (content) content.style.display = "none";
         if (navTools) navTools.style.display = "none";
         if (totpGate) totpGate.style.display = "none";
-        if (emergencyGate) emergencyGate.style.display = "none";
         if (userPassGate) {
           userPassGate.style.display = "flex";
           const userInput = document.getElementById("loginUsernameInput");
@@ -660,7 +608,6 @@
 
     function cancel2faToLogin() {
       document.getElementById("admin2faLoginGate").style.display = "none";
-      document.getElementById("adminEmergencyGate").style.display = "none";
       document.getElementById("adminUserPassLoginGate").style.display = "flex";
       document.getElementById("loginPasswordInput").focus();
     }
@@ -682,37 +629,6 @@
         if (errorMsg) errorMsg.style.display = "block";
         document.getElementById("loginTotpInput").value = "";
         document.getElementById("loginTotpInput").focus();
-      }
-    }
-
-    function toggleEmergencyMasterLogin() {
-      document.getElementById("admin2faLoginGate").style.display = "none";
-      document.getElementById("adminEmergencyGate").style.display = "flex";
-      document.getElementById("emergencyPasswordInput").value = "";
-      document.getElementById("emergencyPasswordInput").focus();
-    }
-
-    function cancelEmergencyLogin() {
-      document.getElementById("adminEmergencyGate").style.display = "none";
-      document.getElementById("admin2faLoginGate").style.display = "flex";
-      document.getElementById("loginTotpInput").focus();
-    }
-
-    function handleMasterPasswordLogin(e) {
-      e.preventDefault();
-      const entered = document.getElementById("emergencyPasswordInput").value.trim();
-      const masterPin = localStorage.getItem(MASTER_PIN_KEY) || DEFAULT_MASTER_PIN;
-      const errorMsg = document.getElementById("emergencyLoginError");
-
-      if (entered === masterPin) {
-        isSessionUnlocked = true;
-        sessionStorage.setItem("smartertv_admin_session", "active");
-        if (errorMsg) errorMsg.style.display = "none";
-        checkAdminAuth();
-      } else {
-        if (errorMsg) errorMsg.style.display = "block";
-        document.getElementById("emergencyPasswordInput").value = "";
-        document.getElementById("emergencyPasswordInput").focus();
       }
     }
 
@@ -853,17 +769,6 @@
 
       document.getElementById("cfgAdminPassword").value = "";
       alert("✔ ¡Credenciales de administrador guardadas correctamente!");
-    }
-
-    function updateMasterPin() {
-      const newPin = (document.getElementById("newMasterPinInput").value || "").trim();
-      if (!newPin || newPin.length < 4) {
-        alert("La contraseña debe tener al menos 4 caracteres.");
-        return;
-      }
-      localStorage.setItem(MASTER_PIN_KEY, newPin);
-      document.getElementById("newMasterPinInput").value = "";
-      alert("✔ ¡Contraseña maestra de emergencia actualizada con éxito!");
     }
 
     /* ================= LICENSES & SALES DATA ================= */
