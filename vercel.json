@@ -4,6 +4,14 @@
     {
       "source": "/download/smartertv.apk",
       "destination": "/downloads/smartertv.apk"
+    },
+    {
+      "source": "/api/check-license",
+      "destination": "/api/license"
+    },
+    {
+      "source": "/api/activate-license",
+      "destination": "/api/license"
     }
   ],
   "headers": [
