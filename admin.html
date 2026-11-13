@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Ventas y Publicidad - SmarterTV Admin</title>
+  <link rel="stylesheet" href="css/web.css">
+  <style>
+    .admin-nav {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .admin-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-tab-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+    }
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      max-width: 500px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <a href="index.html" class="nav-brand">
+      <span>📺</span> Smarter<span>TV</span> <span style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#818cf8; padding:3px 10px; border-radius:9999px; margin-left:6px;">ADMIN</span>
+    </a>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="index.html" class="btn btn-secondary" style="font-size:0.85rem;">
+        ← Volver a la Web
+      </a>
+      <button type="button" onclick="openNewLicenseModal()" class="btn btn-gold" style="font-size:0.85rem;">
+        + Crear Código PRO
+      </button>
+    </div>
+  </header>
+
+  <div class="admin-container">
+
+    <!-- Sub-navigation Tabs -->
+    <div class="admin-nav">
+      <button class="admin-tab-btn active" onclick="switchAdminTab('sales', this)">📊 Suscriptores y Ventas</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('ads', this)">💰 Guía de Ganancias y Publicidad</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('settings', this)">⚙️ Configuración Pasarelas</button>
+    </div>
+
+    <!-- TAB 1: SALES & LICENSES -->
+    <div id="tabSales">
+      <!-- KPI Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Ingresos del Mes (Membresías)</div>
+          <div class="stat-value" id="kpiRevenue">$2,450 MXN</div>
+          <div class="stat-sub">↑ 49 clientes activos</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Ganancia Publicidad Estimada (AdSense)</div>
+          <div class="stat-value" id="kpiAdRevenue">$1,180 MXN</div>
+          <div class="stat-sub">↑ 236,000 impresiones</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Total Televisiones Conectadas</div>
+          <div class="stat-value" id="kpiDevices">184</div>
+          <div class="stat-sub">135 en plan gratis / 49 PRO</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Tasa de Conversión a PRO</div>
+          <div class="stat-value" style="color: #fbbf24;">26.6%</div>
+          <div class="stat-sub">1 de cada 4 compra membresía</div>
+        </div>
+      </div>
+
+      <!-- Subscribers Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700;">Clientes y Licencias PRO Activas</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Administra qué televisiones tienen activado el modo sin anuncios</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="adminSearchInput" oninput="filterLicenses()" placeholder="Buscar cliente o código..." class="btn btn-secondary" style="font-size:0.85rem; padding:6px 14px; text-align:left;">
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Cliente / Contacto</th>
+                <th>ID Televisor</th>
+                <th>Código de Activación</th>
+                <th>Plan</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="licensesTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ADS & EARNINGS GUIDE (DÓNDE Y CÓMO GANARÉ) -->
+    <div id="tabAds" style="display: none;">
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <div class="feature-card" style="border-left: 4px solid var(--accent-gold);">
+          <h2 style="font-size: 1.4rem; color: #fbbf24;">💡 ¿Cómo y Dónde Ganarás Dinero con SmarterTV?</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Tu aplicación cuenta con un <strong>modelo de monetización híbrido</strong> de doble flujo: ganas tanto si el usuario paga membresía como si decide no pagar y usar la app gratis.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+          <!-- Flujo 1 -->
+          <div class="feature-card">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="font-size: 2rem;">📢</div>
+              <div>
+                <h3 style="font-size: 1.15rem;">1. Ganancias por Publicidad (Google AdSense)</h3>
+                <span class="badge badge-trial">Para usuarios gratuitos</span>
+              </div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 10px;">
+              <strong>¿Cómo funciona?</strong> Cuando un usuario lleva más de 5-10 minutos viendo la tele, aparece la barra lateral derecha. Los anuncios rotan automáticamente cada 30 segundos.
+            </p>
+            <ul class="feature-list" style="margin-top: 10px;">
+              <li><span>💵</span> <strong>CPM (Costo por Mil):</strong> Te pagan entre $1 a $3 USD por cada 1,000 impresiones que se muestren.</li>
+              <li><span>⏱️</span> <strong>El poder del streaming:</strong> Un usuario viendo un partido de fútbol o una película genera de 150 a 240 impresiones continuas.</li>
+              <li><span>🏦</span> <strong>¿Dónde cobras?</strong> Google te transfiere mensualmente directo a tu cuenta bancaria (CLABE / SPEI en México).</li>
+            </ul>
+          </div>
+
+          <!-- Flujo 2 -->
+          <div class="feature-card">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="font-size: 2rem;">💎</div>
+              <div>
+                <h3 style="font-size: 1.15rem;">2. Membresías Mensuales PRO</h3>
+                <span class="badge badge-active">Para usuarios que quieren pantalla completa</span>
+              </div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 10px;">
+              <strong>¿Cómo funciona?</strong> Al usuario se le ofrece el botón "Quitar Anuncios" por $49 MXN/mes ($2.50 USD). Escanea el QR con su celular y paga con tarjeta, transferencia u Oxxo.
+            </p>
+            <ul class="feature-list" style="margin-top: 10px;">
+              <li><span>📈</span> <strong>100 clientes = $4,900 MXN mensuales</strong> recurrentes directo a tu bolsillo.</li>
+              <li><span>📈</span> <strong>500 clientes = $24,500 MXN mensuales</strong>.</li>
+              <li><span>⚡</span> <strong>¿Dónde cobras?</strong> En tu cuenta de Mercado Pago o Stripe. El dinero cae directo y tú lo retiras cuando quieras.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Calculadora de Proyección de Ganancias -->
+        <div class="feature-card" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+          <h3 style="font-size: 1.2rem; color: #818cf8; margin-bottom: 12px;">📊 Ejemplo de Ganancias Mensuales Estimadas</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; text-align: center;">
+            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 200 Usuarios Diarios</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 4px;">~$4,500 MXN / mes</div>
+              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+            </div>
+            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 500 Usuarios Diarios</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 4px;">~$14,200 MXN / mes</div>
+              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+            </div>
+            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 1,500 Usuarios Diarios</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin-top: 4px;">~$48,000 MXN / mes</div>
+              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: CONFIGURATION (PAYMENTS & ADSENSE) -->
+    <div id="tabSettings" style="display: none;">
+      <div class="feature-card" style="max-width: 680px; margin: 0 auto;">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Configuración de Pagos y Publicidad</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
+          Define los enlaces donde tus clientes pagarán sus membresías y tu ID de Google para monetizar.
+        </p>
+
+        <form id="settingsForm" onsubmit="saveAdminSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
+            <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX o https://buy.stripe.com/XXXXX" value="https://smartertv.app/checkout">
+            <span style="font-size:0.75rem; color:var(--text-muted);">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ID de Editor de Google AdSense / AdMob</label>
+            <input type="text" id="cfgAdSenseId" class="form-input" placeholder="ca-pub-1234567890123456" value="ca-pub-9482019482019482">
+            <span style="font-size:0.75rem; color:var(--text-muted);">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Precio Mensual Recomendado</label>
+            <input type="text" id="cfgPrice" class="form-input" value="$49 MXN / mes">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+            Guardar Configuración
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Crear Nueva Licencia PRO -->
+  <div id="newLicenseModal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Generar Nueva Licencia PRO</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">Crea un código para entregárselo a un cliente que te pagó por transferencia o en efectivo.</p>
+
+      <form onsubmit="generateNewLicense(event)" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Nombre del Cliente o Teléfono</label>
+          <input type="text" id="clientNameInput" class="form-input" placeholder="ej: Roberto Carlos (WhatsApp: 311...)" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ID de su TV (Opcional, si te lo pasó de su pantalla)</label>
+          <input type="text" id="clientDeviceInput" class="form-input" placeholder="ej: TV-A8F9K2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Duración del Plan</label>
+          <select id="clientPlanSelect" class="form-input">
+            <option value="1 Mes ($49 MXN)" selected>1 Mes ($49 MXN)</option>
+            <option value="3 Meses ($129 MXN)">3 Meses ($129 MXN)</option>
+            <option value="1 Año ($399 MXN)">1 Año ($399 MXN)</option>
+            <option value="Vitalicio / Especial">Vitalicio / Especial</option>
+          </select>
+        </div>
+
+        <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:10px;">
+          <button type="button" onclick="closeNewLicenseModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-gold">Generar y Copiar Código</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initial sample data & local storage
+    const STORAGE_KEY = "smartertv_admin_licenses";
+
+    let licenses = [
+      { id: 1, client: "Carlos Mendoza (Tepic)", device: "TV-84A9F2", code: "PRO-849201", plan: "1 Mes", expires: "2026-12-12", status: "active" },
+      { id: 2, client: "Ana Laura Gutiérrez", device: "TV-12C8D9", code: "PRO-441920", plan: "3 Meses", expires: "2027-02-12", status: "active" },
+      { id: 3, client: "Marcos Peña (Guadalajara)", device: "TV-77F1E0", code: "PRO-992184", plan: "1 Mes", expires: "2026-11-20", status: "active" },
+      { id: 4, client: "Fernando Soto", device: "TV-33B2A1", code: "PRO-110293", plan: "1 Mes", expires: "2026-11-05", status: "expired" },
+    ];
+
+    function initAdmin() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try { licenses = JSON.parse(saved); } catch(e){}
+      }
+      renderLicensesTable(licenses);
+    }
+
+    function renderLicensesTable(list) {
+      const tbody = document.getElementById("licensesTableBody");
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:30px;">No hay licencias registradas</td></tr>`;
+        return;
+      }
+
+      list.forEach(lic => {
+        const isExp = lic.status === "expired";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${lic.client}</strong></td>
+          <td><code style="color:#818cf8;">${lic.device || "Cualquiera"}</code></td>
+          <td><span class="activation-code-tag">${lic.code}</span></td>
+          <td>${lic.plan}</td>
+          <td>${lic.expires}</td>
+          <td><span class="badge ${isExp ? 'badge-expired' : 'badge-active'}">${isExp ? 'Vencida' : 'Activa'}</span></td>
+          <td>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="copyCode('${lic.code}')">📋 Copiar</button>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="renewLicense(${lic.id})">🔄 +30d</button>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem; color:#f87171;" onclick="deleteLicense(${lic.id})">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function switchAdminTab(tab, btn) {
+      document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      document.getElementById("tabSales").style.display = tab === 'sales' ? 'block' : 'none';
+      document.getElementById("tabAds").style.display = tab === 'ads' ? 'block' : 'none';
+      document.getElementById("tabSettings").style.display = tab === 'settings' ? 'block' : 'none';
+    }
+
+    function openNewLicenseModal() {
+      document.getElementById("newLicenseModal").style.display = "flex";
+    }
+
+    function closeNewLicenseModal() {
+      document.getElementById("newLicenseModal").style.display = "none";
+    }
+
+    function generateNewLicense(e) {
+      e.preventDefault();
+      const client = document.getElementById("clientNameInput").value.trim();
+      const device = document.getElementById("clientDeviceInput").value.trim() || "Cualquier TV";
+      const plan = document.getElementById("clientPlanSelect").value;
+
+      const randomCode = "PRO-" + Math.floor(100000 + Math.random() * 900000);
+
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      const expires = d.toISOString().split("T")[0];
+
+      const newLic = {
+        id: Date.now(),
+        client,
+        device,
+        code: randomCode,
+        plan,
+        expires,
+        status: "active"
+      };
+
+      licenses.unshift(newLic);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+      renderLicensesTable(licenses);
+      closeNewLicenseModal();
+
+      navigator.clipboard.writeText(randomCode);
+      alert(`¡Licencia creada con éxito!\nCódigo: ${randomCode}\n(Ya se copió al portapapeles para que se lo envíes a tu cliente por WhatsApp)`);
+    }
+
+    function copyCode(code) {
+      navigator.clipboard.writeText(code);
+      alert(`Código ${code} copiado al portapapeles.`);
+    }
+
+    function renewLicense(id) {
+      const lic = licenses.find(l => l.id === id);
+      if (lic) {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        lic.expires = d.toISOString().split("T")[0];
+        lic.status = "active";
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+        renderLicensesTable(licenses);
+        alert(`Licencia de ${lic.client} renovada por 30 días más.`);
+      }
+    }
+
+    function deleteLicense(id) {
+      if (confirm("¿Estás seguro de eliminar o revocar esta licencia?")) {
+        licenses = licenses.filter(l => l.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+        renderLicensesTable(licenses);
+      }
+    }
+
+    function filterLicenses() {
+      const q = document.getElementById("adminSearchInput").value.toLowerCase();
+      const filtered = licenses.filter(l => l.client.toLowerCase().includes(q) || l.code.toLowerCase().includes(q) || l.device.toLowerCase().includes(q));
+      renderLicensesTable(filtered);
+    }
+
+    function saveAdminSettings(e) {
+      e.preventDefault();
+      alert("¡Configuración de pagos y AdSense guardada con éxito!");
+    }
+
+    document.addEventListener("DOMContentLoaded", initAdmin);
+  </script>
+</body>
+</html>

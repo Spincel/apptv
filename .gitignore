@@ -1,0 +1,17 @@
+# Build and temporary files
+android/bin/
+android/compiled/
+android/gen/
+android/dex/
+android/out/aligned.apk
+android/out/unaligned.apk
+*.idsig
+
+# Python cache & logs
+__pycache__/
+*.py[cod]
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
