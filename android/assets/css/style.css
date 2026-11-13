@@ -85,8 +85,13 @@ body {
   transition: width 0.35s ease, margin-right 0.35s ease;
 }
 
-body.ads-sidebar-active .app-main-layout,
-body.ads-sidebar-active .player-container {
+body.ads-sidebar-active .app-main-layout {
+  width: calc(100vw - var(--ad-sidebar-width)) !important;
+  max-width: calc(100vw - var(--ad-sidebar-width)) !important;
+  margin-right: var(--ad-sidebar-width) !important;
+}
+
+body.ads-sidebar-active.player-active .player-container {
   width: calc(100vw - var(--ad-sidebar-width)) !important;
   max-width: calc(100vw - var(--ad-sidebar-width)) !important;
   margin-right: var(--ad-sidebar-width) !important;
@@ -374,12 +379,16 @@ body.player-active {
   padding: 0 !important;
   background: #000000 !important;
   z-index: 500 !important;
-  display: flex !important;
+  display: none;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
   transition: width 0.35s ease, max-width 0.35s ease, margin-right 0.35s ease;
+}
+
+body.player-active .player-container {
+  display: flex !important;
 }
 
 .video-screen {

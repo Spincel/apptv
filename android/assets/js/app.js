@@ -35,6 +35,11 @@ const App = (() => {
     bindEvents();
     setupTvRemoteNavigation();
 
+    // Ensure player is completely hidden and catalog is visible on start
+    document.body.classList.remove("player-active");
+    const playerContainer = document.getElementById("playerContainer");
+    if (playerContainer) playerContainer.style.display = "none";
+
     if (config.server && config.username && config.password) {
       connectXtreamCodes();
     } else {
