@@ -45,17 +45,54 @@
     <a href="index.html" class="nav-brand">
       <span>📺</span> Smarter<span>TV</span> <span style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#818cf8; padding:3px 10px; border-radius:9999px; margin-left:6px;">ADMIN</span>
     </a>
-    <div style="display:flex; align-items:center; gap:16px;">
+    <div id="adminNavbarTools" style="display:none; align-items:center; gap:16px;">
       <a href="index.html" class="btn btn-secondary" style="font-size:0.85rem;">
         ← Volver a la Web
       </a>
       <button type="button" onclick="openNewLicenseModal()" class="btn btn-gold" style="font-size:0.85rem;">
         + Crear Código PRO
       </button>
+      <button type="button" onclick="adminLogout()" class="btn btn-secondary" style="font-size:0.85rem; color:#f87171; border-color:rgba(239,68,68,0.3);">
+        🔒 Cerrar Sesión
+      </button>
     </div>
   </header>
 
-  <div class="admin-container">
+  <!-- AUTHENTICATION GATE (Visible when not logged in) -->
+  <div id="adminAuthGate" style="display: flex; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px;">
+        🔐
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Panel de Ventas Privado</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
+        Este panel es confidencial y de uso exclusivo para el administrador.
+      </p>
+
+      <form onsubmit="handleAdminLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+        <div class="form-group">
+          <label class="form-label" style="font-size: 0.85rem;">Contraseña Maestra de Administrador</label>
+          <input type="password" id="adminPasswordInput" class="form-input" placeholder="Ingresa tu contraseña" required autofocus style="font-size: 1rem; padding: 12px 16px;">
+        </div>
+
+        <div id="adminLoginError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          ⚠️ Contraseña incorrecta. Intenta nuevamente.
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 1rem; justify-content: center; margin-top: 4px;">
+          Desbloquear Panel
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; font-size: 0.78rem; color: var(--text-muted);">
+        Clave predeterminada inicial: <strong style="color: #818cf8;">admin2026</strong><br>
+        (Puedes personalizarla en la pestaña Configuración).
+      </div>
+    </div>
+  </div>
+
+  <!-- PROTECTED ADMIN CONTENT (Visible ONLY when authenticated) -->
+  <div id="adminProtectedContent" style="display: none;" class="admin-container">
 
     <!-- Sub-navigation Tabs -->
     <div class="admin-nav">
@@ -93,20 +130,21 @@
         </div>
       </div>
 
-      <!-- Subscribers Table -->
-      <div class="table-card">
-        <div class="table-header">
+      <!-- Action & Search Bar -->
+      <div style="background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px;">
           <div>
-            <h3 style="font-size: 1.15rem; font-weight: 700;">Clientes y Licencias PRO Activas</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Administra qué televisiones tienen activado el modo sin anuncios</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700;">Clientes y Licencias PRO Activas</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Administra qué televisiones tienen activado el modo sin anuncios</p>
           </div>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="adminSearchInput" oninput="filterLicenses()" placeholder="Buscar cliente o código..." class="btn btn-secondary" style="font-size:0.85rem; padding:6px 14px; text-align:left;">
+          <div>
+            <input type="text" id="adminSearchInput" onkeyup="filterLicenses()" placeholder="Buscar cliente o código..." class="form-input" style="width: 260px; font-size: 0.88rem;">
           </div>
         </div>
 
+        <!-- Licenses Table -->
         <div style="overflow-x: auto;">
-          <table class="data-table">
+          <table class="admin-table">
             <thead>
               <tr>
                 <th>Cliente / Contacto</th>
@@ -119,82 +157,48 @@
               </tr>
             </thead>
             <tbody id="licensesTableBody">
-              <!-- Rendered via JS -->
+              <!-- Dynamically rendered -->
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- TAB 2: ADS & EARNINGS GUIDE (DÓNDE Y CÓMO GANARÉ) -->
+    <!-- TAB 2: AD MONETIZATION GUIDE & CALCULATOR -->
     <div id="tabAds" style="display: none;">
-      <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
         
-        <div class="feature-card" style="border-left: 4px solid var(--accent-gold);">
-          <h2 style="font-size: 1.4rem; color: #fbbf24;">💡 ¿Cómo y Dónde Ganarás Dinero con SmarterTV?</h2>
-          <p style="color: var(--text-muted); font-size: 0.95rem;">
-            Tu aplicación cuenta con un <strong>modelo de monetización híbrido</strong> de doble flujo: ganas tanto si el usuario paga membresía como si decide no pagar y usar la app gratis.
+        <div class="feature-card">
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: #818cf8; margin-bottom: 12px;">📈 ¿Cómo ganas dinero con la Publicidad?</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px;">
+            Tu aplicación cuenta con un sistema de <strong>Barra Lateral Dividida (Split-Screen Ad Sidebar)</strong>. A los 5 minutos de uso continuo gratuito, la pantalla se ajusta a la izquierda y abre un espacio publicitario a la derecha sin cortar el video ni el audio.
           </p>
+          <ul style="color: #d1d5db; font-size: 0.88rem; display: flex; flex-direction: column; gap: 8px; margin-left: 18px; margin-bottom: 16px;">
+            <li><strong>Impresiones Continuas (CPM):</strong> Cada usuario genera entre 10 y 30 impresiones por hora mientras mira televisión.</li>
+            <li><strong>Google AdSense / Redes de Banners:</strong> Pagan en promedio de $0.50 a $2.50 USD por cada 1,000 impresiones.</li>
+            <li><strong>Banners Locales Propios:</strong> Puedes vender la barra lateral a negocios locales (pizzerías, talleres, servicios) cobrando una tarifa mensual fija (ej: $500 MXN al mes por anuncio).</li>
+          </ul>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-          <!-- Flujo 1 -->
-          <div class="feature-card">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="font-size: 2rem;">📢</div>
-              <div>
-                <h3 style="font-size: 1.15rem;">1. Ganancias por Publicidad (Google AdSense)</h3>
-                <span class="badge badge-trial">Para usuarios gratuitos</span>
-              </div>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 10px;">
-              <strong>¿Cómo funciona?</strong> Cuando un usuario lleva más de 5-10 minutos viendo la tele, aparece la barra lateral derecha. Los anuncios rotan automáticamente cada 30 segundos.
-            </p>
-            <ul class="feature-list" style="margin-top: 10px;">
-              <li><span>💵</span> <strong>CPM (Costo por Mil):</strong> Te pagan entre $1 a $3 USD por cada 1,000 impresiones que se muestren.</li>
-              <li><span>⏱️</span> <strong>El poder del streaming:</strong> Un usuario viendo un partido de fútbol o una película genera de 150 a 240 impresiones continuas.</li>
-              <li><span>🏦</span> <strong>¿Dónde cobras?</strong> Google te transfiere mensualmente directo a tu cuenta bancaria (CLABE / SPEI en México).</li>
-            </ul>
-          </div>
-
-          <!-- Flujo 2 -->
-          <div class="feature-card">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="font-size: 2rem;">💎</div>
-              <div>
-                <h3 style="font-size: 1.15rem;">2. Membresías Mensuales PRO</h3>
-                <span class="badge badge-active">Para usuarios que quieren pantalla completa</span>
-              </div>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 10px;">
-              <strong>¿Cómo funciona?</strong> Al usuario se le ofrece el botón "Quitar Anuncios" por $49 MXN/mes ($2.50 USD). Escanea el QR con su celular y paga con tarjeta, transferencia u Oxxo.
-            </p>
-            <ul class="feature-list" style="margin-top: 10px;">
-              <li><span>📈</span> <strong>100 clientes = $4,900 MXN mensuales</strong> recurrentes directo a tu bolsillo.</li>
-              <li><span>📈</span> <strong>500 clientes = $24,500 MXN mensuales</strong>.</li>
-              <li><span>⚡</span> <strong>¿Dónde cobras?</strong> En tu cuenta de Mercado Pago o Stripe. El dinero cae directo y tú lo retiras cuando quieras.</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Calculadora de Proyección de Ganancias -->
-        <div class="feature-card" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+        <div class="feature-card">
           <h3 style="font-size: 1.2rem; color: #818cf8; margin-bottom: 12px;">📊 Ejemplo de Ganancias Mensuales Estimadas</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; text-align: center;">
-            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 200 Usuarios Diarios</div>
-              <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 4px;">~$4,500 MXN / mes</div>
-              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+          <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem;">
+            <div style="background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px;">
+              <div style="font-weight: 700; color: #ffffff;">Con 50 usuarios diarios activos:</div>
+              <div style="color: var(--text-muted); font-size: 0.82rem;">~75,000 impresiones / mes</div>
+              <div style="color: #34d399; font-weight: 700; margin-top: 4px;">≈ $600 - $1,500 MXN en anuncios</div>
             </div>
-            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 500 Usuarios Diarios</div>
-              <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 4px;">~$14,200 MXN / mes</div>
-              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+
+            <div style="background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px;">
+              <div style="font-weight: 700; color: #ffffff;">Con 200 usuarios diarios activos:</div>
+              <div style="color: var(--text-muted); font-size: 0.82rem;">~300,000 impresiones / mes</div>
+              <div style="color: #34d399; font-weight: 700; margin-top: 4px;">≈ $2,500 - $6,000 MXN en anuncios</div>
             </div>
-            <div style="background: var(--bg-surface); padding: 16px; border-radius: 12px;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Con 1,500 Usuarios Diarios</div>
-              <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin-top: 4px;">~$48,000 MXN / mes</div>
-              <div style="font-size: 0.75rem; color: #34d399;">(Membresías + Anuncios)</div>
+
+            <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); padding: 12px 16px; border-radius: 12px;">
+              <div style="font-weight: 700; color: #fbbf24;">+ Membresías PRO vendidas:</div>
+              <div style="color: #d1d5db; font-size: 0.82rem;">Si el 20% te compra la versión sin anuncios a $49 MXN/mes:</div>
+              <div style="color: #fbbf24; font-weight: 800; font-size: 1.05rem; margin-top: 4px;">≈ +$1,960 MXN mensuales directos a tu bolsa</div>
             </div>
           </div>
         </div>
@@ -205,15 +209,15 @@
     <!-- TAB 3: CONFIGURATION (PAYMENTS & ADSENSE) -->
     <div id="tabSettings" style="display: none;">
       <div class="feature-card" style="max-width: 680px; margin: 0 auto;">
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Configuración de Pagos y Publicidad</h3>
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Configuración de Pagos y Seguridad</h3>
         <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
-          Define los enlaces donde tus clientes pagarán sus membresías y tu ID de Google para monetizar.
+          Define tus enlaces de cobro, datos de AdSense y cambia la clave de acceso a este panel.
         </p>
 
         <form id="settingsForm" onsubmit="saveAdminSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
           <div class="form-group">
             <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
-            <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX o https://buy.stripe.com/XXXXX" value="https://smartertv.app/checkout">
+            <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX o https://buy.stripe.com/XXXXX" value="https://www.keopstore.online/#pricing">
             <span style="font-size:0.75rem; color:var(--text-muted);">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
           </div>
 
@@ -228,8 +232,20 @@
             <input type="text" id="cfgPrice" class="form-input" value="$49 MXN / mes">
           </div>
 
+          <!-- Cambiar contraseña maestra -->
+          <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px;">
+            <label class="form-label">🔐 Cambiar Contraseña Maestra del Panel Admin</label>
+            <div style="display: flex; gap: 10px;">
+              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Escribe tu nueva contraseña secreta">
+              <button type="button" onclick="updateMasterPin()" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
+                Actualizar Clave
+              </button>
+            </div>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Esta contraseña bloqueará el acceso al panel ante cualquier otra persona.</span>
+          </div>
+
           <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
-            Guardar Configuración
+            Guardar Configuración General
           </button>
         </form>
       </div>
@@ -241,7 +257,7 @@
   <div id="newLicenseModal" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Generar Nueva Licencia PRO</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">Crea un código para entregárselo a un cliente que te pagó por transferencia o en efectivo.</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">Crea un código para entregárselo a un cliente que te pagó por transferencia, WhatsApp o en efectivo.</p>
 
       <form onsubmit="generateNewLicense(event)" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
@@ -273,8 +289,10 @@
   </div>
 
   <script>
-    // Initial sample data & local storage
     const STORAGE_KEY = "smartertv_admin_licenses";
+    const MASTER_PIN_KEY = "smartertv_admin_master_pin";
+    const AUTH_SESSION_KEY = "smartertv_admin_session";
+    const DEFAULT_MASTER_PIN = "admin2026";
 
     let licenses = [
       { id: 1, client: "Carlos Mendoza (Tepic)", device: "TV-84A9F2", code: "PRO-849201", plan: "1 Mes", expires: "2026-12-12", status: "active" },
@@ -283,7 +301,62 @@
       { id: 4, client: "Fernando Soto", device: "TV-33B2A1", code: "PRO-110293", plan: "1 Mes", expires: "2026-11-05", status: "expired" },
     ];
 
-    function initAdmin() {
+    /* ================= AUTHENTICATION & ACCESS CONTROL ================= */
+    function checkAdminAuth() {
+      const isAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === "authenticated";
+      const gate = document.getElementById("adminAuthGate");
+      const content = document.getElementById("adminProtectedContent");
+      const navTools = document.getElementById("adminNavbarTools");
+
+      if (isAuth) {
+        if (gate) gate.style.display = "none";
+        if (content) content.style.display = "block";
+        if (navTools) navTools.style.display = "flex";
+        initAdminData();
+      } else {
+        if (gate) gate.style.display = "flex";
+        if (content) content.style.display = "none";
+        if (navTools) navTools.style.display = "none";
+        const pinInput = document.getElementById("adminPasswordInput");
+        if (pinInput) pinInput.focus();
+      }
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const entered = (document.getElementById("adminPasswordInput").value || "").trim();
+      const currentPin = localStorage.getItem(MASTER_PIN_KEY) || DEFAULT_MASTER_PIN;
+      const errorMsg = document.getElementById("adminLoginError");
+
+      if (entered === currentPin) {
+        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        if (errorMsg) errorMsg.style.display = "none";
+        checkAdminAuth();
+      } else {
+        if (errorMsg) errorMsg.style.display = "block";
+        document.getElementById("adminPasswordInput").value = "";
+        document.getElementById("adminPasswordInput").focus();
+      }
+    }
+
+    function adminLogout() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      location.reload();
+    }
+
+    function updateMasterPin() {
+      const newPin = (document.getElementById("newMasterPinInput").value || "").trim();
+      if (!newPin || newPin.length < 4) {
+        alert("La contraseña debe tener al menos 4 caracteres.");
+        return;
+      }
+      localStorage.setItem(MASTER_PIN_KEY, newPin);
+      document.getElementById("newMasterPinInput").value = "";
+      alert("✔ ¡Contraseña maestra de Administrador actualizada con éxito!");
+    }
+
+    /* ================= LICENSES & SALES DATA ================= */
+    function initAdminData() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try { licenses = JSON.parse(saved); } catch(e){}
@@ -406,7 +479,7 @@
       alert("¡Configuración de pagos y AdSense guardada con éxito!");
     }
 
-    document.addEventListener("DOMContentLoaded", initAdmin);
+    document.addEventListener("DOMContentLoaded", checkAdminAuth);
   </script>
 </body>
 </html>
