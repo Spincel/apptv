@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SmarterTV - Reproductor IPTV Nativo</title>
+  <link rel="icon" type="image/png" href="assets/mascot.png">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/hls.min.js"></script>
   <script src="js/qrcode.min.js"></script>
@@ -15,7 +16,9 @@
     <!-- Top Navigation Header -->
     <header class="app-header">
       <div class="brand">
-        <div class="brand-icon">📺</div>
+        <div class="brand-icon">
+          <img src="assets/mascot.png" alt="SmarterTV Mascot" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
         <div class="brand-title">Smarter<span>TV</span></div>
       </div>
 
@@ -60,35 +63,12 @@
     <div class="player-overlay-top">
       <div class="player-title" id="playerTitleText">Transmisión</div>
       <div style="display: flex; gap: 8px; align-items: center;">
-        <button type="button" id="toggleZappingDrawerBtn" class="btn btn-secondary" style="padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); gap: 5px;" title="Ver lista de canales sin cerrar el video">
-          <span>☰</span> Canales
-        </button>
-        <button type="button" id="minimizePlayerBtn" class="btn btn-secondary" style="padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.35); gap: 5px;" title="Minimizar a previsualización para explorar canales">
-          <span>🗗</span> Vista Previa
-        </button>
-        <button type="button" id="pipPlayerBtn" class="btn btn-secondary" style="padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; background: rgba(255,255,255,0.12); color: #818cf8; border-color: rgba(99,102,241,0.3); gap: 5px;">
-          <span>⧉</span> Modo Flotante (PiP)
-        </button>
         <button type="button" id="closePlayerBtn" class="btn btn-secondary" style="padding: 6px 16px; border-radius: 9999px; font-size: 0.82rem;">
-          ✕ Cerrar
+          ✕ Cerrar Reproductor
         </button>
       </div>
     </div>
     <video id="videoPlayer" class="video-screen" controls autoplay playsinline></video>
-
-    <!-- On-Screen Quick Zapping Channel Drawer (Browse channels while watching) -->
-    <div id="playerZappingDrawer" class="player-zapping-drawer" style="display: none;">
-      <div class="zapping-header">
-        <div class="zapping-title">
-          <span>📺</span> Canales en Vivo
-        </div>
-        <button type="button" id="closeZappingDrawerBtn" class="zapping-close-btn" title="Cerrar lista">✕</button>
-      </div>
-      <div class="zapping-search-box">
-        <input type="text" id="zappingSearchInput" class="zapping-search-input" placeholder="🔍 Buscar canal rápido...">
-      </div>
-      <div id="zappingChannelsList" class="zapping-channels-list"></div>
-    </div>
   </div>
 
   <!-- Side Ad Bar (Non-intrusive split-screen banner) -->

@@ -330,128 +330,6 @@ const App = (() => {
   }
 
   /* ================= Streaming & Video Player ================= */
-  let isMiniPlayer = false;
-
-  function toggleMiniPlayerMode(forceState) {
-    const playerContainer = document.getElementById("playerContainer");
-    const minBtn = document.getElementById("minimizePlayerBtn");
-    if (!playerContainer) return;
-
-    if (typeof forceState === "boolean") {
-      isMiniPlayer = forceState;
-    } else {
-      isMiniPlayer = !isMiniPlayer;
-    }
-
-    if (isMiniPlayer) {
-      playerContainer.classList.add("mini-mode");
-      if (minBtn) {
-        minBtn.innerHTML = "<span>⛶</span> Pantalla Completa";
-        minBtn.title = "Volver a pantalla completa";
-      }
-      closeZappingDrawer();
-    } else {
-      playerContainer.classList.remove("mini-mode");
-      if (minBtn) {
-        minBtn.innerHTML = "<span>🗗</span> Vista Previa";
-        minBtn.title = "Minimizar a previsualización para explorar canales";
-      }
-    }
-  }
-
-  function openZappingDrawer() {
-    if (isMiniPlayer) return;
-    const drawer = document.getElementById("playerZappingDrawer");
-    if (!drawer) return;
-    drawer.style.display = "flex";
-    renderZappingChannels();
-    const searchInput = document.getElementById("zappingSearchInput");
-    if (searchInput) {
-      searchInput.value = "";
-      setTimeout(() => searchInput.focus(), 60);
-    }
-  }
-
-  function closeZappingDrawer() {
-    const drawer = document.getElementById("playerZappingDrawer");
-    if (drawer) drawer.style.display = "none";
-  }
-
-  function toggleZappingDrawer() {
-    const drawer = document.getElementById("playerZappingDrawer");
-    if (!drawer) return;
-    if (drawer.style.display === "none" || !drawer.style.display) {
-      openZappingDrawer();
-    } else {
-      closeZappingDrawer();
-    }
-  }
-
-  function renderZappingChannels(query = "") {
-    const list = document.getElementById("zappingChannelsList");
-    if (!list) return;
-
-    list.innerHTML = "";
-
-    let items = currentTab === "live" ? liveStreams : currentTab === "favs" ? favorites : vodStreams;
-    if (!Array.isArray(items) || items.length === 0) {
-      items = liveStreams || [];
-    }
-
-    if (activeCategoryId !== "all") {
-      items = items.filter((it) => String(it.category_id) === String(activeCategoryId));
-    }
-
-    if (query && query.trim()) {
-      const q = query.trim().toLowerCase();
-      items = items.filter((it) => (it.name || it.title || "").toLowerCase().includes(q));
-    }
-
-    if (items.length === 0) {
-      list.innerHTML = `<div style="text-align: center; color: #9ca3af; padding: 24px; font-size: 0.85rem;">No se encontraron canales</div>`;
-      return;
-    }
-
-    items.slice(0, 150).forEach((item) => {
-      const isCurrent = currentPlayingItem && (currentPlayingItem.stream_id || currentPlayingItem.id) === (item.stream_id || item.id);
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = `zapping-channel-item ${isCurrent ? "active-channel" : ""}`;
-      row.tabIndex = 0;
-
-      const logoUrl = item.stream_icon || item.icon;
-      const logoHtml = logoUrl
-        ? `<img class="zapping-channel-logo" src="${logoUrl}" alt="" onerror="this.style.display='none'" />`
-        : `<div class="zapping-channel-logo" style="display:flex;align-items:center;justify-content:center;color:#6366f1;">📺</div>`;
-
-      row.innerHTML = `
-        ${logoHtml}
-        <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          <div style="font-weight: 600;">${item.name || item.title || "Canal"}</div>
-          ${isCurrent ? '<div style="font-size:0.7rem; color:#818cf8;">▶ Reproduciendo ahora</div>' : ""}
-        </div>
-      `;
-
-      row.onclick = () => {
-        playStream(item);
-        renderZappingChannels(query);
-      };
-
-      row.onkeydown = (e) => {
-        if (e.key === "Enter") {
-          playStream(item);
-          renderZappingChannels(query);
-        }
-      };
-
-      list.appendChild(row);
-
-      if (isCurrent) {
-        setTimeout(() => row.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
-      }
-    });
-  }
-
   function playStream(item) {
     currentPlayingItem = item;
     const cleanServer = config.server.trim().replace(/\/+$/, "");
@@ -464,17 +342,6 @@ const App = (() => {
 
     if (titleEl) titleEl.textContent = item.name || item.title || "Transmisión";
     playerContainer.style.display = "flex";
-
-    // Keep mini-mode if user clicked card while in mini mode
-    if (!isMiniPlayer) {
-      playerContainer.classList.remove("mini-mode");
-    }
-
-    // Refresh zapping list if open
-    const zappingDrawer = document.getElementById("playerZappingDrawer");
-    if (zappingDrawer && zappingDrawer.style.display !== "none") {
-      renderZappingChannels();
-    }
 
     // Notify Android container that video player is active (for auto-PiP when leaving app)
     if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
@@ -527,9 +394,6 @@ const App = (() => {
   function closePlayer() {
     const playerContainer = document.getElementById("playerContainer");
     const video = document.getElementById("videoPlayer");
-
-    toggleMiniPlayerMode(false);
-    closeZappingDrawer();
 
     // Notify Android container that video player is inactive
     if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
@@ -596,58 +460,6 @@ const App = (() => {
     const closePlayerBtn = document.getElementById("closePlayerBtn");
     if (closePlayerBtn) closePlayerBtn.onclick = closePlayer;
 
-    // Quick Zapping Menu Button (In-Player Channels)
-    const toggleZappingBtn = document.getElementById("toggleZappingDrawerBtn");
-    if (toggleZappingBtn) toggleZappingBtn.onclick = toggleZappingDrawer;
-
-    const closeZappingBtn = document.getElementById("closeZappingDrawerBtn");
-    if (closeZappingBtn) closeZappingBtn.onclick = closeZappingDrawer;
-
-    const zappingSearchInput = document.getElementById("zappingSearchInput");
-    if (zappingSearchInput) {
-      zappingSearchInput.oninput = (e) => renderZappingChannels(e.target.value);
-    }
-
-    // Minimize / Preview Player Mode Button
-    const minimizePlayerBtn = document.getElementById("minimizePlayerBtn");
-    if (minimizePlayerBtn) {
-      minimizePlayerBtn.onclick = () => toggleMiniPlayerMode();
-    }
-
-    // Expand back to fullscreen when clicking anywhere on the mini-player
-    const playerContainer = document.getElementById("playerContainer");
-    if (playerContainer) {
-      playerContainer.addEventListener("click", (e) => {
-        if (isMiniPlayer && !e.target.closest("button") && !e.target.closest("input")) {
-          toggleMiniPlayerMode(false);
-        }
-      });
-    }
-
-    // Floating Picture-in-Picture (PiP) Button
-    const pipPlayerBtn = document.getElementById("pipPlayerBtn");
-    if (pipPlayerBtn) {
-      pipPlayerBtn.onclick = () => {
-        if (window.AndroidBridge && window.AndroidBridge.enterPictureInPicture) {
-          try { window.AndroidBridge.enterPictureInPicture(); } catch (e) {}
-        } else {
-          const video = document.getElementById("videoPlayer");
-          if (video && !video.paused) {
-            if (document.pictureInPictureElement) {
-              document.exitPictureInPicture().catch(() => {});
-            } else if (video.requestPictureInPicture) {
-              video.requestPictureInPicture().catch(() => {});
-            }
-          }
-        }
-      };
-    }
-
-    // Android PiP state callback
-    window.onPipModeChanged = (isPip) => {
-      document.body.classList.toggle("pip-mode", !!isPip);
-    };
-
     // Search Input
     const searchInput = document.getElementById("globalSearchInput");
     if (searchInput) {
@@ -660,18 +472,9 @@ const App = (() => {
 
     // Fullscreen back handler for Android TV
     window.handleTvBack = () => {
-      const zappingDrawer = document.getElementById("playerZappingDrawer");
-      if (zappingDrawer && zappingDrawer.style.display !== "none") {
-        closeZappingDrawer();
-        return;
-      }
       const playerContainer = document.getElementById("playerContainer");
       if (playerContainer && playerContainer.style.display !== "none") {
-        if (isMiniPlayer) {
-          closePlayer();
-        } else {
-          closePlayer();
-        }
+        closePlayer();
         return;
       }
       const loginModal = document.getElementById("loginModal");
@@ -689,39 +492,11 @@ const App = (() => {
       if (!active) return;
 
       const playerContainer = document.getElementById("playerContainer");
-      const zappingDrawer = document.getElementById("playerZappingDrawer");
-      const isPlayerOpen = playerContainer && playerContainer.style.display !== "none";
-
-      // TV remote controls during video playback
-      if (isPlayerOpen) {
-        const isDrawerOpen = zappingDrawer && zappingDrawer.style.display !== "none";
-
-        // Open zapping drawer on Left arrow or Menu
-        if ((e.key === "ArrowLeft" || e.key === "m" || e.key === "M") && !isMiniPlayer && !isDrawerOpen) {
-          e.preventDefault();
-          openZappingDrawer();
-          return;
-        }
-
-        // Close zapping drawer on Right arrow or Back
-        if (e.key === "ArrowRight" && isDrawerOpen) {
-          e.preventDefault();
-          closeZappingDrawer();
-          return;
-        }
-
-        if ((e.key === "Escape" || e.key === "Backspace") && isDrawerOpen) {
-          e.preventDefault();
-          closeZappingDrawer();
-          return;
-        }
-
+      if (playerContainer && playerContainer.style.display !== "none") {
         const video = document.getElementById("videoPlayer");
         if (e.key === "Enter" || e.key === " ") {
-          if (!isDrawerOpen) {
-            if (video.paused) video.play();
-            else video.pause();
-          }
+          if (video.paused) video.play();
+          else video.pause();
         } else if (e.key === "Escape" || e.key === "Backspace") {
           closePlayer();
         }
