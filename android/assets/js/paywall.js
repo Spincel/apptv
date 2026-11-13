@@ -302,14 +302,27 @@ const PaywallManager = (() => {
     const checkoutUrl = `${checkoutBaseUrl}?device=${encodeURIComponent(deviceId)}`;
     modal.style.display = "flex";
 
-    // Generate dynamic QR Code
+    // Dynamic direct payment button for mobile users
+    const payBtn = document.getElementById("proDirectPayBtn");
+    if (payBtn) {
+      payBtn.onclick = (e) => {
+        e.preventDefault();
+        if (window.AndroidBridge && window.AndroidBridge.openExternalUrl) {
+          window.AndroidBridge.openExternalUrl(checkoutUrl);
+        } else {
+          window.open(checkoutUrl, "_blank");
+        }
+      };
+    }
+
+    // Generate dynamic QR Code (compact 95px for TVs / TV boxes)
     const qrTarget = document.getElementById("proQrContainer");
     if (qrTarget && window.QRCode) {
       qrTarget.innerHTML = "";
       new window.QRCode(qrTarget, {
         text: checkoutUrl,
-        width: 140,
-        height: 140,
+        width: 95,
+        height: 95,
         colorDark: "#0c0f17",
         colorLight: "#ffffff",
         correctLevel: window.QRCode.CorrectLevel.M,
@@ -332,6 +345,9 @@ const PaywallManager = (() => {
   function bindProModalEvents() {
     const closeBtn = document.getElementById("closeProModalBtn");
     if (closeBtn) closeBtn.onclick = closeProModal;
+
+    const closeIconBtn = document.getElementById("closeProModalIconBtn");
+    if (closeIconBtn) closeIconBtn.onclick = closeProModal;
 
     const removeAdsBtn = document.getElementById("removeAdsBtn");
     if (removeAdsBtn) removeAdsBtn.onclick = openProModal;

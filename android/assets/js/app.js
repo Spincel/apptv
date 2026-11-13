@@ -175,10 +175,36 @@ const App = (() => {
   }
 
   /* ================= UI Rendering & Pill Chips ================= */
+  function setupPillsDragScroll(slider) {
+    if (!slider || slider._dragInit) return;
+    slider._dragInit = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    slider.addEventListener("mousedown", (e) => {
+      isDown = true;
+      startX = e.pageX - slider.offsetLeft;
+      scrollLeft = slider.scrollLeft;
+    });
+
+    slider.addEventListener("mouseleave", () => { isDown = false; });
+    slider.addEventListener("mouseup", () => { isDown = false; });
+
+    slider.addEventListener("mousemove", (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - slider.offsetLeft;
+      const walk = (x - startX) * 1.5;
+      slider.scrollLeft = scrollLeft - walk;
+    });
+  }
+
   function renderCategoryPills() {
     const container = document.getElementById("categoryPillsContainer");
     if (!container) return;
 
+    setupPillsDragScroll(container);
     container.innerHTML = "";
 
     // "Todos" default pill
@@ -191,6 +217,9 @@ const App = (() => {
       renderCategoryPills();
       renderItems();
     };
+    allPill.addEventListener("focus", () => {
+      allPill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    });
     container.appendChild(allPill);
 
     const categories = currentTab === "live" ? liveCategories : currentTab === "movie" ? vodCategories : seriesCategories;
@@ -209,6 +238,9 @@ const App = (() => {
           renderCategoryPills();
           renderItems();
         };
+        pill.addEventListener("focus", () => {
+          pill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        });
         container.appendChild(pill);
       });
     }
@@ -311,6 +343,11 @@ const App = (() => {
     if (titleEl) titleEl.textContent = item.name || item.title || "Transmisión";
     playerContainer.style.display = "flex";
 
+    // Notify Android container that video player is active (for auto-PiP when leaving app)
+    if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
+      try { window.AndroidBridge.setPlayerActive(true); } catch (e) {}
+    }
+
     if (hls) {
       hls.destroy();
       hls = null;
@@ -357,6 +394,11 @@ const App = (() => {
   function closePlayer() {
     const playerContainer = document.getElementById("playerContainer");
     const video = document.getElementById("videoPlayer");
+
+    // Notify Android container that video player is inactive
+    if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
+      try { window.AndroidBridge.setPlayerActive(false); } catch (e) {}
+    }
 
     if (hls) {
       hls.destroy();
@@ -417,6 +459,30 @@ const App = (() => {
     // Close Player Button
     const closePlayerBtn = document.getElementById("closePlayerBtn");
     if (closePlayerBtn) closePlayerBtn.onclick = closePlayer;
+
+    // Floating Picture-in-Picture (PiP) Button
+    const pipPlayerBtn = document.getElementById("pipPlayerBtn");
+    if (pipPlayerBtn) {
+      pipPlayerBtn.onclick = () => {
+        if (window.AndroidBridge && window.AndroidBridge.enterPictureInPicture) {
+          try { window.AndroidBridge.enterPictureInPicture(); } catch (e) {}
+        } else {
+          const video = document.getElementById("videoPlayer");
+          if (video && !video.paused) {
+            if (document.pictureInPictureElement) {
+              document.exitPictureInPicture().catch(() => {});
+            } else if (video.requestPictureInPicture) {
+              video.requestPictureInPicture().catch(() => {});
+            }
+          }
+        }
+      };
+    }
+
+    // Android PiP state callback
+    window.onPipModeChanged = (isPip) => {
+      document.body.classList.toggle("pip-mode", !!isPip);
+    };
 
     // Search Input
     const searchInput = document.getElementById("globalSearchInput");

@@ -35,7 +35,13 @@
 }
 
 body.ads-sidebar-active {
-  --ad-sidebar-width: 290px;
+  --ad-sidebar-width: 280px;
+}
+
+@media (max-width: 960px) {
+  body.ads-sidebar-active {
+    --ad-sidebar-width: 220px;
+  }
 }
 
 * {
@@ -68,14 +74,22 @@ body {
   transition: transform 0.15s ease, outline 0.15s ease;
 }
 
-/* Smooth width resizing of main workspace when side ads appear */
-.app-header,
-.pill-bar-container,
-.category-pills,
-.main-viewport,
-.player-container {
-  width: calc(100% - var(--ad-sidebar-width)) !important;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), margin-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+/* Smooth layout resizing: The main content physically shrinks so ads never overlap */
+.app-main-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  transition: width 0.35s ease, margin-right 0.35s ease;
+}
+
+body.ads-sidebar-active .app-main-layout,
+body.ads-sidebar-active .player-container {
+  width: calc(100vw - var(--ad-sidebar-width)) !important;
+  max-width: calc(100vw - var(--ad-sidebar-width)) !important;
+  margin-right: var(--ad-sidebar-width) !important;
 }
 
 /* ================= Header Bar ================= */
@@ -215,13 +229,19 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* Category sub-pills */
+/* Category sub-pills with smooth horizontal scrolling */
 .category-pills {
-  padding: 10px 24px;
+  padding: 8px 20px;
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   scrollbar-width: none;
+  flex-shrink: 0;
 }
 
 .category-pills::-webkit-scrollbar {
@@ -522,17 +542,27 @@ body.ads-sidebar-active .ad-sidebar {
 
 .pro-modal-card {
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
   background: var(--bg-surface);
   border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: 20px;
-  padding: 32px;
+  padding: 20px 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 24px rgba(245, 158, 11, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
+  gap: 12px;
+}
+
+@media (max-height: 520px) {
+  .pro-modal-card {
+    padding: 14px 18px;
+    gap: 8px;
+  }
 }
 
 .login-card {
@@ -637,4 +667,34 @@ body.ads-sidebar-active .ad-sidebar {
   justify-content: center;
   gap: 14px;
   color: var(--text-muted);
+}
+
+/* ================= Picture-in-Picture (PiP) Floating Player ================= */
+body.pip-mode {
+  background: #000000 !important;
+}
+
+body.pip-mode .app-main-layout,
+body.pip-mode .ad-sidebar,
+body.pip-mode .player-overlay-top,
+body.pip-mode .modal-overlay {
+  display: none !important;
+}
+
+body.pip-mode .player-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 999999 !important;
+  background: #000000 !important;
+  display: flex !important;
+}
+
+body.pip-mode .video-screen {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }

@@ -17,6 +17,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.app.PictureInPictureParams;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.net.Uri;
+import android.util.Rational;
+import android.webkit.JavascriptInterface;
 
 public class MainActivity extends Activity {
 
@@ -24,6 +30,7 @@ public class MainActivity extends Activity {
     private FrameLayout customViewContainer;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
+    private boolean isPlayerPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +89,9 @@ public class MainActivity extends Activity {
         // Custom User Agent (identify as SmarterTV / VLC player for IPTV provider compatibility)
         String defaultUa = settings.getUserAgentString();
         settings.setUserAgentString(defaultUa + " SmarterTV/1.0.0 (VLC/3.0.18)");
+
+        // JavaScript Interface for Native Picture-in-Picture & External Browser Links
+        webView.addJavascriptInterface(new WebAppInterface(), "AndroidBridge");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -203,6 +213,71 @@ public class MainActivity extends Activity {
         super.onPause();
         if (webView != null) {
             webView.onPause();
+        }
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        // If user presses Home or switches apps while watching video, activate Picture-in-Picture
+        if (isPlayerPlaying) {
+            triggerPip();
+        }
+    }
+
+    public void triggerPip() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder();
+                Rational aspectRatio = new Rational(16, 9);
+                builder.setAspectRatio(aspectRatio);
+                enterPictureInPictureMode(builder.build());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        if (webView != null) {
+            webView.evaluateJavascript("if(window.onPipModeChanged) window.onPipModeChanged(" + isInPictureInPictureMode + ");", null);
+        }
+        if (!isInPictureInPictureMode) {
+            hideSystemUI();
+        }
+    }
+
+    public class WebAppInterface {
+        @JavascriptInterface
+        public void setPlayerActive(final boolean active) {
+            isPlayerPlaying = active;
+        }
+
+        @JavascriptInterface
+        public void enterPictureInPicture() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    triggerPip();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openExternalUrl(final String url) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
     }
 
