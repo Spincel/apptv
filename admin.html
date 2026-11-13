@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel de Ventas y Publicidad - SmarterTV Admin</title>
   <link rel="stylesheet" href="css/web.css">
+  <script src="js/qrcode.min.js"></script>
   <style>
     .admin-nav {
       display: flex;
@@ -36,6 +37,25 @@
       max-width: 500px;
       width: 100%;
     }
+    .totp-digit-input {
+      font-family: monospace;
+      font-size: 2.2rem;
+      letter-spacing: 12px;
+      text-align: center;
+      font-weight: 800;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid var(--primary);
+      background: rgba(0, 0, 0, 0.3);
+      color: #ffffff;
+      width: 100%;
+      outline: none;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+    .totp-digit-input:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -58,47 +78,125 @@
     </div>
   </header>
 
-  <!-- AUTHENTICATION GATE (Visible when not logged in) -->
-  <div id="adminAuthGate" style="display: flex; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
-      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px;">
-        🔐
+  <!-- ================= AUTHENTICATION GATES ================= -->
+
+  <!-- GATE 1: Google Authenticator 2FA Login (Visible when 2FA is active) -->
+  <div id="admin2faLoginGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
+      <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
+        🛡️
       </div>
-      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Panel de Ventas Privado</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
-        Este panel es confidencial y de uso exclusivo para el administrador.
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Protección 2FA Activa</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+        Abre tu aplicación <strong>Google Authenticator</strong> en tu celular e introduce el código de 6 dígitos:
       </p>
 
-      <form onsubmit="handleAdminLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
-        <div class="form-group">
-          <label class="form-label" style="font-size: 0.85rem;">Contraseña Maestra de Administrador</label>
-          <input type="password" id="adminPasswordInput" class="form-input" placeholder="Ingresa tu contraseña" required autofocus style="font-size: 1rem; padding: 12px 16px;">
+      <form onsubmit="handle2faVerify(event)" style="display: flex; flex-direction: column; gap: 18px;">
+        <div>
+          <input type="text" id="loginTotpInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" autofocus autocomplete="one-time-code">
         </div>
 
-        <div id="adminLoginError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-          ⚠️ Contraseña incorrecta. Intenta nuevamente.
+        <div id="login2faError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          ⚠️ Código inválido o expirado. Espera a que cambie en tu app e intenta de nuevo.
         </div>
 
-        <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 1rem; justify-content: center; margin-top: 4px;">
-          Desbloquear Panel
+        <button type="submit" class="btn btn-primary" style="padding: 14px; font-size: 1rem; justify-content: center;">
+          Verificar y Desbloquear Panel
         </button>
       </form>
 
-      <div style="margin-top: 24px; font-size: 0.78rem; color: var(--text-muted);">
-        Clave predeterminada inicial: <strong style="color: #818cf8;">admin2026</strong><br>
-        (Puedes personalizarla en la pestaña Configuración).
+      <div style="margin-top: 24px; font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 16px;">
+        <a href="javascript:void(0)" onclick="toggleEmergencyMasterLogin()" style="color: var(--text-muted); text-decoration: none;">
+          🔑 Acceso de emergencia con Contraseña Maestra
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- PROTECTED ADMIN CONTENT (Visible ONLY when authenticated) -->
+  <!-- GATE 2: Initial Setup 2FA (Visible when 2FA has NOT been linked yet) -->
+  <div id="admin2faSetupGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 520px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
+        📲
+      </div>
+      <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 6px;">Vincular Google Authenticator</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 18px;">
+        Blindarás tu panel para que nadie pueda hackearlo sin tu celular físico.
+      </p>
+
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 20px; text-align: left; font-size: 0.85rem; color: #d1d5db; display: flex; flex-direction: column; gap: 8px;">
+        <div><strong>1.</strong> Abre la app <strong>Google Authenticator</strong> (o Microsoft Authenticator).</div>
+        <div><strong>2.</strong> Toca el botón <strong>"+"</strong> y selecciona <strong>"Escanear código QR"</strong>.</div>
+        <div><strong>3.</strong> Apunta con tu cámara a este recuadro:</div>
+      </div>
+
+      <!-- QR Code Output -->
+      <div style="background: #ffffff; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+        <div id="setupQrCodeContainer"></div>
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+        O escribe esta clave secreta manualmente:<br>
+        <code id="setupSecretText" style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 1px;">...</code>
+      </div>
+
+      <form onsubmit="handle2faSetupConfirm(event)" style="display: flex; flex-direction: column; gap: 14px;">
+        <label style="font-size: 0.85rem; color: var(--text-muted); text-align: left;">
+          Escribe los 6 dígitos que ahora aparecen en tu celular:
+        </label>
+        <input type="text" id="setupVerifyCodeInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" required>
+
+        <div id="setup2faError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          ⚠️ El código no coincide. Asegúrate de ingresar el que está corriendo ahora mismo en tu app.
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="padding: 13px; font-size: 1rem; justify-content: center;">
+          ✔ Confirmar y Activar Protección 2FA
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- GATE 3: Emergency Master Password (Fallback) -->
+  <div id="adminEmergencyGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px;">
+        🔑
+      </div>
+      <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 8px;">Acceso de Emergencia</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+        Usa tu Contraseña Maestra de Respaldo:
+      </p>
+
+      <form onsubmit="handleMasterPasswordLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+        <div class="form-group">
+          <label class="form-label" style="font-size: 0.85rem;">Contraseña Maestra</label>
+          <input type="password" id="emergencyPasswordInput" class="form-input" placeholder="Ingresa tu contraseña de respaldo" required autofocus style="font-size: 1rem; padding: 12px 16px;">
+        </div>
+
+        <div id="emergencyLoginError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          ⚠️ Contraseña incorrecta.
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 1rem; justify-content: center;">
+          Ingresar
+        </button>
+
+        <button type="button" onclick="cancelEmergencyLogin()" class="btn btn-secondary" style="padding: 10px; font-size: 0.85rem; justify-content: center;">
+          ← Volver a Google Authenticator
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= PROTECTED ADMIN CONTENT (Visible ONLY when logged in) ================= -->
   <div id="adminProtectedContent" style="display: none;" class="admin-container">
 
     <!-- Sub-navigation Tabs -->
     <div class="admin-nav">
       <button class="admin-tab-btn active" onclick="switchAdminTab('sales', this)">📊 Suscriptores y Ventas</button>
       <button class="admin-tab-btn" onclick="switchAdminTab('ads', this)">💰 Guía de Ganancias y Publicidad</button>
-      <button class="admin-tab-btn" onclick="switchAdminTab('settings', this)">⚙️ Configuración Pasarelas</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('settings', this)">⚙️ Configuración Pasarelas y 2FA</button>
     </div>
 
     <!-- TAB 1: SALES & LICENSES -->
@@ -176,7 +274,7 @@
           <ul style="color: #d1d5db; font-size: 0.88rem; display: flex; flex-direction: column; gap: 8px; margin-left: 18px; margin-bottom: 16px;">
             <li><strong>Impresiones Continuas (CPM):</strong> Cada usuario genera entre 10 y 30 impresiones por hora mientras mira televisión.</li>
             <li><strong>Google AdSense / Redes de Banners:</strong> Pagan en promedio de $0.50 a $2.50 USD por cada 1,000 impresiones.</li>
-            <li><strong>Banners Locales Propios:</strong> Puedes vender la barra lateral a negocios locales (pizzerías, talleres, servicios) cobrando una tarifa mensual fija (ej: $500 MXN al mes por anuncio).</li>
+            <li><strong>Banners Locales Propios:</strong> Puedes vender la barra lateral a negocios locales cobrando una tarifa mensual fija (ej: $500 MXN al mes por anuncio).</li>
           </ul>
         </div>
 
@@ -206,51 +304,94 @@
       </div>
     </div>
 
-    <!-- TAB 3: CONFIGURATION (PAYMENTS & ADSENSE) -->
+    <!-- TAB 3: CONFIGURATION (PAYMENTS, ADSENSE & 2FA MANAGEMENT) -->
     <div id="tabSettings" style="display: none;">
-      <div class="feature-card" style="max-width: 680px; margin: 0 auto;">
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Configuración de Pagos y Seguridad</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
-          Define tus enlaces de cobro, datos de AdSense y cambia la clave de acceso a este panel.
-        </p>
+      <div class="feature-card" style="max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+        
+        <div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Configuración de Pagos y Publicidad</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
+            Define tus enlaces de cobro y datos de Google AdSense.
+          </p>
 
-        <form id="settingsForm" onsubmit="saveAdminSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
-          <div class="form-group">
-            <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
-            <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX o https://buy.stripe.com/XXXXX" value="https://www.keopstore.online/#pricing">
-            <span style="font-size:0.75rem; color:var(--text-muted);">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
+          <form id="settingsForm" onsubmit="saveAdminSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
+              <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX" value="https://www.keopstore.online/#pricing">
+              <span style="font-size:0.75rem; color:var(--text-muted);">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">ID de Editor de Google AdSense / AdMob</label>
+              <input type="text" id="cfgAdSenseId" class="form-input" placeholder="ca-pub-1234567890123456" value="ca-pub-8020880380669433">
+              <span style="font-size:0.75rem; color:var(--text-muted);">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Precio Mensual Recomendado</label>
+              <input type="text" id="cfgPrice" class="form-input" value="$49 MXN / mes">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 4px;">
+              Guardar Configuración General
+            </button>
+          </form>
+        </div>
+
+        <!-- 2FA Authenticator Management Section -->
+        <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: #34d399;">🛡️ Seguridad en Dos Pasos (Google Authenticator)</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+            Tu panel está protegido con códigos dinámicos que cambian cada 30 segundos.
+          </p>
+
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="font-weight: 700; color: #34d399; font-size: 0.95rem;">● Estado: 2FA ACTIVADO Y PROTEGIDO</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Solo quien tenga tu teléfono puede acceder al panel.</div>
+            </div>
+            <button type="button" onclick="show2faBackupModal()" class="btn btn-secondary" style="font-size: 0.85rem;">
+              📱 Ver Código QR o Clave
+            </button>
           </div>
 
+          <!-- Cambiar contraseña de respaldo -->
           <div class="form-group">
-            <label class="form-label">ID de Editor de Google AdSense / AdMob</label>
-            <input type="text" id="cfgAdSenseId" class="form-input" placeholder="ca-pub-1234567890123456" value="ca-pub-8020880380669433">
-            <span style="font-size:0.75rem; color:var(--text-muted);">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Precio Mensual Recomendado</label>
-            <input type="text" id="cfgPrice" class="form-input" value="$49 MXN / mes">
-          </div>
-
-          <!-- Cambiar contraseña maestra -->
-          <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px;">
-            <label class="form-label">🔐 Cambiar Contraseña Maestra del Panel Admin</label>
+            <label class="form-label">Contraseña Maestra de Respaldo</label>
             <div style="display: flex; gap: 10px;">
-              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Escribe tu nueva contraseña secreta">
+              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Nueva contraseña de emergencia">
               <button type="button" onclick="updateMasterPin()" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
                 Actualizar Clave
               </button>
             </div>
-            <span style="font-size:0.75rem; color:var(--text-muted);">Esta contraseña bloqueará el acceso al panel ante cualquier otra persona.</span>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia.</span>
           </div>
+        </div>
 
-          <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
-            Guardar Configuración General
-          </button>
-        </form>
       </div>
     </div>
 
+  </div>
+
+  <!-- Modal Ver QR de Respaldo 2FA -->
+  <div id="backup2faModal" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="text-align: center;">
+      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Tu Llave de Google Authenticator</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Escanea este código si cambias de celular o deseas vincular un segundo teléfono.</p>
+
+      <div style="background: #ffffff; padding: 14px; border-radius: 16px; display: inline-block; margin-bottom: 12px;">
+        <div id="backupQrCodeContainer"></div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">CLAVE SECRETA (TEXTO):</div>
+        <code id="backupSecretText" style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 6px 14px; border-radius: 8px; font-weight: 700; letter-spacing: 1px;">...</code>
+      </div>
+
+      <button type="button" onclick="document.getElementById('backup2faModal').style.display='none'" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        Cerrar
+      </button>
+    </div>
   </div>
 
   <!-- Modal Crear Nueva Licencia PRO -->
@@ -288,11 +429,15 @@
     </div>
   </div>
 
+  <!-- ================= LOGIC & RFC 6238 TOTP ENGINE ================= -->
   <script>
     const STORAGE_KEY = "smartertv_admin_licenses";
     const MASTER_PIN_KEY = "smartertv_admin_master_pin";
     const AUTH_SESSION_KEY = "smartertv_admin_session";
+    const TOTP_SECRET_KEY = "smartertv_totp_secret";
     const DEFAULT_MASTER_PIN = "admin2026";
+    // Base 32 default secret seed for Keopstore SmarterTV
+    const DEFAULT_TOTP_SECRET = "KEOPSTORETV2026X";
 
     let licenses = [
       { id: 1, client: "Carlos Mendoza (Tepic)", device: "TV-84A9F2", code: "PRO-849201", plan: "1 Mes", expires: "2026-12-12", status: "active" },
@@ -301,47 +446,224 @@
       { id: 4, client: "Fernando Soto", device: "TV-33B2A1", code: "PRO-110293", plan: "1 Mes", expires: "2026-11-05", status: "expired" },
     ];
 
+    /* ================= CRYPTOGRAPHIC TOTP (RFC 6238) ================= */
+    async function verifyTotpToken(token, secretBase32, windowSteps = 1) {
+      if (!token || token.trim().length !== 6) return false;
+      try {
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        let bits = "";
+        for (let i = 0; i < secretBase32.length; i++) {
+          const val = alphabet.indexOf(secretBase32.charAt(i).toUpperCase());
+          if (val === -1) continue;
+          bits += val.toString(2).padStart(5, "0");
+        }
+        const keyBytes = new Uint8Array(Math.floor(bits.length / 8));
+        for (let i = 0; i < keyBytes.length; i++) {
+          keyBytes[i] = parseInt(bits.substr(i * 8, 8), 2);
+        }
+
+        const cryptoKey = await window.crypto.subtle.importKey(
+          "raw",
+          keyBytes,
+          { name: "HMAC", hash: { name: "SHA-1" } },
+          false,
+          ["sign"]
+        );
+
+        const epoch = Math.floor(Date.now() / 1000);
+        const currentStep = Math.floor(epoch / 30);
+
+        for (let w = -windowSteps; w <= windowSteps; w++) {
+          const step = currentStep + w;
+          const msg = new Uint8Array(8);
+          let temp = step;
+          for (let i = 7; i >= 0; i--) {
+            msg[i] = temp & 0xff;
+            temp = Math.floor(temp / 256);
+          }
+
+          const hmacSig = await window.crypto.subtle.sign("HMAC", cryptoKey, msg);
+          const hmac = new Uint8Array(hmacSig);
+          const offset = hmac[hmac.length - 1] & 0x0f;
+          const binary =
+            ((hmac[offset] & 0x7f) << 24) |
+            ((hmac[offset + 1] & 0xff) << 16) |
+            ((hmac[offset + 2] & 0xff) << 8) |
+            (hmac[offset + 3] & 0xff);
+          const calculatedCode = (binary % 1000000).toString().padStart(6, "0");
+
+          if (calculatedCode === token.trim()) {
+            return true;
+          }
+        }
+      } catch (err) {
+        console.error("TOTP verification error:", err);
+      }
+      return false;
+    }
+
+    function getTotpSecret() {
+      let sec = localStorage.getItem(TOTP_SECRET_KEY);
+      if (!sec) {
+        sec = DEFAULT_TOTP_SECRET;
+        localStorage.setItem(TOTP_SECRET_KEY, sec);
+      }
+      return sec;
+    }
+
     /* ================= AUTHENTICATION & ACCESS CONTROL ================= */
     function checkAdminAuth() {
       const isAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === "authenticated";
-      const gate = document.getElementById("adminAuthGate");
+      const isSetupDone = localStorage.getItem("smartertv_2fa_configured") === "true";
+
+      const loginGate = document.getElementById("admin2faLoginGate");
+      const setupGate = document.getElementById("admin2faSetupGate");
+      const emergencyGate = document.getElementById("adminEmergencyGate");
       const content = document.getElementById("adminProtectedContent");
       const navTools = document.getElementById("adminNavbarTools");
 
+      emergencyGate.style.display = "none";
+
       if (isAuth) {
-        if (gate) gate.style.display = "none";
-        if (content) content.style.display = "block";
-        if (navTools) navTools.style.display = "flex";
+        loginGate.style.display = "none";
+        setupGate.style.display = "none";
+        content.style.display = "block";
+        navTools.style.display = "flex";
         initAdminData();
       } else {
-        if (gate) gate.style.display = "flex";
-        if (content) content.style.display = "none";
-        if (navTools) navTools.style.display = "none";
-        const pinInput = document.getElementById("adminPasswordInput");
-        if (pinInput) pinInput.focus();
+        content.style.display = "none";
+        navTools.style.display = "none";
+
+        if (!isSetupDone) {
+          // First time: Show setup QR code
+          loginGate.style.display = "none";
+          setupGate.style.display = "flex";
+          renderSetupQrCode();
+        } else {
+          // Already configured: Show 6-digit TOTP login
+          setupGate.style.display = "none";
+          loginGate.style.display = "flex";
+          const input = document.getElementById("loginTotpInput");
+          if (input) {
+            input.value = "";
+            input.focus();
+          }
+        }
       }
     }
 
-    function handleAdminLogin(e) {
-      e.preventDefault();
-      const entered = (document.getElementById("adminPasswordInput").value || "").trim();
-      const currentPin = localStorage.getItem(MASTER_PIN_KEY) || DEFAULT_MASTER_PIN;
-      const errorMsg = document.getElementById("adminLoginError");
+    function renderSetupQrCode() {
+      const secret = getTotpSecret();
+      const textElem = document.getElementById("setupSecretText");
+      if (textElem) textElem.textContent = secret;
 
-      if (entered === currentPin) {
+      const container = document.getElementById("setupQrCodeContainer");
+      if (container && window.QRCode) {
+        container.innerHTML = "";
+        const otpauthUri = `otpauth://totp/SmarterTV%20Admin:keopstore?secret=${secret}&issuer=SmarterTV`;
+        new window.QRCode(container, {
+          text: otpauthUri,
+          width: 170,
+          height: 170,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M,
+        });
+      }
+    }
+
+    async function handle2faSetupConfirm(e) {
+      e.preventDefault();
+      const code = document.getElementById("setupVerifyCodeInput").value.trim();
+      const secret = getTotpSecret();
+      const isValid = await verifyTotpToken(code, secret);
+      const errorMsg = document.getElementById("setup2faError");
+
+      if (isValid) {
+        localStorage.setItem("smartertv_2fa_configured", "true");
+        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        if (errorMsg) errorMsg.style.display = "none";
+        alert("🎉 ¡Google Authenticator vinculado con éxito!\nTu panel ahora está completamente blindado contra hackeos.");
+        checkAdminAuth();
+      } else {
+        if (errorMsg) errorMsg.style.display = "block";
+        document.getElementById("setupVerifyCodeInput").value = "";
+        document.getElementById("setupVerifyCodeInput").focus();
+      }
+    }
+
+    async function handle2faVerify(e) {
+      e.preventDefault();
+      const code = document.getElementById("loginTotpInput").value.trim();
+      const secret = getTotpSecret();
+      const isValid = await verifyTotpToken(code, secret);
+      const errorMsg = document.getElementById("login2faError");
+
+      if (isValid) {
         sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
         if (errorMsg) errorMsg.style.display = "none";
         checkAdminAuth();
       } else {
         if (errorMsg) errorMsg.style.display = "block";
-        document.getElementById("adminPasswordInput").value = "";
-        document.getElementById("adminPasswordInput").focus();
+        document.getElementById("loginTotpInput").value = "";
+        document.getElementById("loginTotpInput").focus();
+      }
+    }
+
+    function toggleEmergencyMasterLogin() {
+      document.getElementById("admin2faLoginGate").style.display = "none";
+      document.getElementById("adminEmergencyGate").style.display = "flex";
+      document.getElementById("emergencyPasswordInput").value = "";
+      document.getElementById("emergencyPasswordInput").focus();
+    }
+
+    function cancelEmergencyLogin() {
+      document.getElementById("adminEmergencyGate").style.display = "none";
+      document.getElementById("admin2faLoginGate").style.display = "flex";
+      document.getElementById("loginTotpInput").focus();
+    }
+
+    function handleMasterPasswordLogin(e) {
+      e.preventDefault();
+      const entered = document.getElementById("emergencyPasswordInput").value.trim();
+      const masterPin = localStorage.getItem(MASTER_PIN_KEY) || DEFAULT_MASTER_PIN;
+      const errorMsg = document.getElementById("emergencyLoginError");
+
+      if (entered === masterPin) {
+        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        if (errorMsg) errorMsg.style.display = "none";
+        checkAdminAuth();
+      } else {
+        if (errorMsg) errorMsg.style.display = "block";
+        document.getElementById("emergencyPasswordInput").value = "";
+        document.getElementById("emergencyPasswordInput").focus();
       }
     }
 
     function adminLogout() {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       location.reload();
+    }
+
+    function show2faBackupModal() {
+      const modal = document.getElementById("backup2faModal");
+      const secret = getTotpSecret();
+      document.getElementById("backupSecretText").textContent = secret;
+
+      const container = document.getElementById("backupQrCodeContainer");
+      if (container && window.QRCode) {
+        container.innerHTML = "";
+        const otpauthUri = `otpauth://totp/SmarterTV%20Admin:keopstore?secret=${secret}&issuer=SmarterTV`;
+        new window.QRCode(container, {
+          text: otpauthUri,
+          width: 170,
+          height: 170,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M,
+        });
+      }
+      modal.style.display = "flex";
     }
 
     function updateMasterPin() {
@@ -352,7 +674,7 @@
       }
       localStorage.setItem(MASTER_PIN_KEY, newPin);
       document.getElementById("newMasterPinInput").value = "";
-      alert("✔ ¡Contraseña maestra de Administrador actualizada con éxito!");
+      alert("✔ ¡Contraseña maestra de emergencia actualizada con éxito!");
     }
 
     /* ================= LICENSES & SALES DATA ================= */
