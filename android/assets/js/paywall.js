@@ -16,7 +16,7 @@ const PaywallManager = (() => {
     PRO_KEY: "smartertv_pro_key",
   };
 
-  let checkoutBaseUrl = "https://smartertv.app/checkout";
+  let checkoutBaseUrl = "https://www.keopstore.online/#pricing";
 
   let deviceId = "";
   let isPro = false;
