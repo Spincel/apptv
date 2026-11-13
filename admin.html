@@ -280,6 +280,9 @@
             <p style="color: var(--text-muted); font-size: 0.88rem;">Administra qué televisiones tienen activado el modo sin anuncios</p>
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" onclick="openNewLicenseModal()" class="btn btn-gold" style="font-size: 0.85rem; padding: 9px 14px; gap: 6px;">
+              🎟️ + Crear Código (Prueba o Permanente)
+            </button>
             <button type="button" onclick="syncOnlineLicenses()" class="btn btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; gap: 6px; color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
               🔄 Sincronizar Pagos Online
             </button>
@@ -501,36 +504,65 @@
     </div>
   </div>
 
-  <!-- Modal Crear Nueva Licencia PRO -->
+  <!-- Modal Crear Nueva Licencia PRO / Código de Prueba o Permanente -->
   <div id="newLicenseModal" class="modal-overlay" style="display: none;">
-    <div class="modal-box">
-      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Generar Nueva Licencia PRO</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">Crea un código para entregárselo a un cliente que te pagó por transferencia, WhatsApp o en efectivo.</p>
+    <div class="modal-box" style="max-width: 520px; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;">🎟️ Crear Código (Prueba o Permanente)</h3>
+        <button type="button" onclick="closeNewLicenseModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">
+        Crea códigos personalizados para regalar pruebas temporales o asignar membresías de por vida a quien tú elijas.
+      </p>
 
       <form onsubmit="generateNewLicense(event)" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
-          <label class="form-label">Nombre del Cliente o Teléfono</label>
-          <input type="text" id="clientNameInput" class="form-input" placeholder="ej: Roberto Carlos (WhatsApp: 311...)" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">ID de su TV (Opcional, si te lo pasó de su pantalla)</label>
-          <input type="text" id="clientDeviceInput" class="form-input" placeholder="ej: TV-A8F9K2">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Duración del Plan</label>
-          <select id="clientPlanSelect" class="form-input">
-            <option value="1 Mes ($49 MXN)" selected>1 Mes ($49 MXN)</option>
-            <option value="3 Meses ($129 MXN)">3 Meses ($129 MXN)</option>
-            <option value="1 Año ($399 MXN)">1 Año ($399 MXN)</option>
-            <option value="Vitalicio / Especial">Vitalicio / Especial</option>
+          <label class="form-label">Tipo de Acceso y Duración</label>
+          <select id="clientPlanSelect" class="form-input" onchange="onPlanSelectChange(this.value)">
+            <optgroup label="🎁 Pruebas Gratis / Demos">
+              <option value="demo_3d">Prueba Gratis - 3 Días</option>
+              <option value="demo_7d" selected>Prueba Gratis - 7 Días (1 Semana)</option>
+              <option value="demo_15d">Prueba Gratis - 15 Días</option>
+            </optgroup>
+            <optgroup label="👑 Planes Permanentes (Sin Vencimiento)">
+              <option value="perma_free">Permanente / Vitalicio (Cortesía / Amigos $0)</option>
+              <option value="perma_paid">Permanente / Vitalicio (Pago)</option>
+            </optgroup>
+            <optgroup label="🌟 Suscripciones Temporales">
+              <option value="1_mes">1 Mes ($49 MXN)</option>
+              <option value="3_meses">3 Meses ($129 MXN)</option>
+              <option value="1_ano">1 Año ($399 MXN)</option>
+            </optgroup>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Beneficiario / Nombre o Teléfono</label>
+          <input type="text" id="clientNameInput" class="form-input" placeholder="ej: Juan Pérez (Demo WhatsApp) o Carlos Amigo" required>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin: 0;">Código de Activación</label>
+            <button type="button" onclick="regenerateRandomCode()" style="background: none; border: none; color: #818cf8; font-size: 0.78rem; cursor: pointer; text-decoration: underline;">
+              🎲 Generar otro código
+            </button>
+          </div>
+          <input type="text" id="customCodeInput" class="form-input" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; letter-spacing: 1px; color: #fbbf24; text-transform: uppercase;" placeholder="DEMO7-123456" required>
+          <span class="form-help">Puedes usar el código generado o escribir uno personalizado (ej: <code>VIPAMIGO</code>, <code>PRUEBAJUAN</code>, <code>HOTELFREE</code>).</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ID de su TV (Opcional)</label>
+          <input type="text" id="clientDeviceInput" class="form-input" placeholder="ej: TV-A8F9K2 (o dejar en blanco para cualquier TV)">
+          <span class="form-help">Si lo pones, se activa su TV sola. Si lo dejas vacío, el cliente podrá escribir este código en su pantalla.</span>
         </div>
 
         <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:10px;">
           <button type="button" onclick="closeNewLicenseModal()" class="btn btn-secondary">Cancelar</button>
-          <button type="submit" class="btn btn-gold">Generar y Copiar Código</button>
+          <button type="submit" class="btn btn-gold" style="gap: 6px;">
+            <span>✨</span> Crear y Copiar Mensaje
+          </button>
         </div>
       </form>
     </div>
@@ -556,17 +588,32 @@
       const activeLicenses = licenses.filter(l => l.status === "active");
       const activeCount = activeLicenses.length;
       const totalCount = licenses.length;
-      const totalRev = activeCount * 49;
+
+      // Cálculo de ingresos reales diferenciando ventas de pruebas gratis
+      const paying = activeLicenses.filter(l => {
+        const p = (l.plan || "").toLowerCase();
+        return !p.includes("prueba") && !p.includes("cortesía") && !p.includes("cortesia") && !p.includes("$0");
+      });
+      const demoCount = activeLicenses.filter(l => (l.plan || "").toLowerCase().includes("prueba")).length;
+
+      let totalRev = 0;
+      paying.forEach(l => {
+        const p = l.plan || "";
+        if (p.includes("129") || p.includes("3 Meses")) totalRev += 129;
+        else if (p.includes("399") || p.includes("1 Año") || p.includes("1 Ano")) totalRev += 399;
+        else if (p.includes("Vitalicio") || p.includes("Permanente")) totalRev += 199;
+        else totalRev += 49;
+      });
 
       const revElem = document.getElementById("kpiRevenue");
       const revSub = document.getElementById("kpiRevenueSub");
-      if (revElem) revElem.textContent = `$${totalRev} MXN`;
-      if (revSub) revSub.textContent = `${activeCount} clientes activos`;
+      if (revElem) revElem.textContent = `$${totalRev.toLocaleString()} MXN`;
+      if (revSub) revSub.textContent = `${paying.length} de paga ${demoCount > 0 ? `(+${demoCount} en prueba gratis)` : ""}`;
 
       const devElem = document.getElementById("kpiDevices");
       const devSub = document.getElementById("kpiDevicesSub");
       if (devElem) devElem.textContent = `${totalCount}`;
-      if (devSub) devSub.textContent = `${totalCount} licencias registradas`;
+      if (devSub) devSub.textContent = `${activeCount} activos / ${totalCount - activeCount} vencidos`;
 
       const convElem = document.getElementById("kpiConversion");
       if (convElem) {
@@ -1042,34 +1089,101 @@
       document.getElementById("tabSettings").style.display = tab === 'settings' ? 'block' : 'none';
     }
 
+    function onPlanSelectChange(planVal) {
+      regenerateRandomCode(planVal);
+    }
+
+    function regenerateRandomCode(planVal) {
+      if (!planVal) {
+        planVal = document.getElementById("clientPlanSelect")?.value || "demo_7d";
+      }
+      const codeInput = document.getElementById("customCodeInput");
+      if (!codeInput) return;
+
+      const rnd = Math.floor(100000 + Math.random() * 900000);
+      let prefix = "PRO-";
+      if (planVal === "demo_3d") prefix = "DEMO3-";
+      else if (planVal === "demo_7d") prefix = "DEMO7-";
+      else if (planVal === "demo_15d") prefix = "DEMO15-";
+      else if (planVal === "perma_free" || planVal === "perma_paid") prefix = "PERM-";
+      else if (planVal === "3_meses") prefix = "PRO3-";
+      else if (planVal === "1_ano") prefix = "PRO12-";
+      else prefix = "PRO-";
+
+      codeInput.value = prefix + rnd;
+    }
+
     function openNewLicenseModal() {
-      document.getElementById("newLicenseModal").style.display = "flex";
+      const modal = document.getElementById("newLicenseModal");
+      if (!modal) return;
+      modal.style.display = "flex";
+      const planSel = document.getElementById("clientPlanSelect");
+      if (planSel) planSel.value = "demo_7d";
+      regenerateRandomCode("demo_7d");
+      const clientInput = document.getElementById("clientNameInput");
+      if (clientInput) {
+        clientInput.value = "";
+        setTimeout(() => clientInput.focus(), 100);
+      }
+      const devInput = document.getElementById("clientDeviceInput");
+      if (devInput) devInput.value = "";
     }
 
     function closeNewLicenseModal() {
       document.getElementById("newLicenseModal").style.display = "none";
     }
 
-    function generateNewLicense(e) {
+    async function generateNewLicense(e) {
       e.preventDefault();
       const client = document.getElementById("clientNameInput").value.trim();
-      const device = document.getElementById("clientDeviceInput").value.trim() || "Cualquier TV";
-      const plan = document.getElementById("clientPlanSelect").value;
+      const device = (document.getElementById("clientDeviceInput").value || "").trim().toUpperCase() || "Cualquier TV";
+      const planVal = document.getElementById("clientPlanSelect").value;
+      let code = (document.getElementById("customCodeInput").value || "").trim().toUpperCase();
 
-      const randomCode = "PRO-" + Math.floor(100000 + Math.random() * 900000);
+      if (!code) {
+        regenerateRandomCode(planVal);
+        code = document.getElementById("customCodeInput").value.trim().toUpperCase();
+      }
 
-      const d = new Date();
-      d.setDate(d.getDate() + 30);
-      const expires = d.toISOString().split("T")[0];
+      let planLabel = "SmarterTV PRO";
+      let expires = "PERMANENTE";
+      const now = new Date();
+
+      if (planVal === "demo_3d") {
+        planLabel = "Prueba Gratis (3 Días)";
+        expires = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (planVal === "demo_7d") {
+        planLabel = "Prueba Gratis (7 Días)";
+        expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (planVal === "demo_15d") {
+        planLabel = "Prueba Gratis (15 Días)";
+        expires = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (planVal === "perma_free") {
+        planLabel = "Permanente (Cortesía $0)";
+        expires = "PERMANENTE";
+      } else if (planVal === "perma_paid") {
+        planLabel = "Permanente / Vitalicio";
+        expires = "PERMANENTE";
+      } else if (planVal === "1_mes") {
+        planLabel = "1 Mes ($49 MXN)";
+        expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (planVal === "3_meses") {
+        planLabel = "3 Meses ($129 MXN)";
+        expires = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (planVal === "1_ano") {
+        planLabel = "1 Año ($399 MXN)";
+        expires = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      }
 
       const newLic = {
         id: Date.now(),
         client,
         device,
-        code: randomCode,
-        plan,
+        code,
+        plan: planLabel,
         expires,
-        status: "active"
+        status: "active",
+        createdAt: now.toISOString()
       };
 
       licenses.unshift(newLic);
@@ -1078,8 +1192,27 @@
       updateKpiStats();
       closeNewLicenseModal();
 
-      navigator.clipboard.writeText(randomCode);
-      alert(`¡Licencia creada con éxito!\nCódigo: ${randomCode}\n(Ya se copió al portapapeles para que se lo envíes a tu cliente por WhatsApp)`);
+      // Sincronizar en el servidor en segundo plano
+      try {
+        fetch(`/api/license?action=activate&code=${encodeURIComponent(code)}&device=${encodeURIComponent(device === "Cualquier TV" ? "" : device)}&plan=${encodeURIComponent(planLabel)}&expires=${encodeURIComponent(expires)}`);
+      } catch (_) {}
+
+      // Formatear mensaje para WhatsApp
+      const expMsg = expires === "PERMANENTE" ? "De por vida (Permanente sin vencimiento)" : `Válido hasta el ${expires}`;
+      const waMsg = `🍿 *¡Tu acceso a SmarterTV PRO está listo!*
+
+🔑 *Código de Activación:* ${code}
+⏱️ *Membresía:* ${planLabel}
+📅 *Vencimiento:* ${expMsg}
+
+📺 *¿Cómo activarlo en tu televisor?*
+1. Abre la app *SmarterTV* en tu Smart TV o TV Box.
+2. Presiona en el botón dorado *'Quitar Anuncios'* o *'Activar PRO'*.
+3. En la casilla *'Canjear Código'*, escribe tu código: *${code}*
+4. Pulsa en *Activar* y ¡listo! Disfruta de todo tu contenido en 4K sin cortes ni anuncios.`;
+
+      navigator.clipboard.writeText(waMsg);
+      alert(`🎉 ¡Código creado con éxito!\n\n🔑 Código: ${code}\n⏱️ Plan: ${planLabel}\n📅 ${expMsg}\n\n📋 ¡El mensaje para tu cliente ya se copió al portapapeles! Solo ve a WhatsApp y pégalo.`);
     }
 
     function copyCode(code) {

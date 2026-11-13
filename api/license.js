@@ -1,5 +1,5 @@
-// Unified Vercel Serverless Function: License Manager
-// Shares memory and /tmp across check, activate, and list operations
+// Unified Vercel Serverless Function: License & Code Manager
+// Handles checking, activating, listing, and custom coupon codes (Demos & Permanent)
 
 global.activeLicenses = global.activeLicenses || {};
 
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
   const action = (query.action || (req.url && req.url.includes("activate") ? "activate" : "") || (req.method === "POST" ? "activate" : "check")).toLowerCase();
   const rawDevice = body.device || query.device || query.id || query.external_reference || body.external_reference || "";
   const device = rawDevice.trim().toUpperCase();
+  const rawCode = (body.code || query.code || "").trim().toUpperCase();
 
   // Load from /tmp into global.activeLicenses if needed
   try {
@@ -46,30 +47,46 @@ export default async function handler(req, res) {
     });
   }
 
-  // 2. ACTIVATE LICENSE (action=activate or POST or URL has 'activate')
+  // 2. ACTIVATE / REGISTER LICENSE OR CUSTOM CODE
   const isActivateRequest = action === "activate" || query.activate === "true" || (query.plan && query.status);
 
-  if (isActivateRequest && device) {
+  if (isActivateRequest && (device || rawCode)) {
     const plan = (body.plan || query.plan || "mensual").toLowerCase();
-    const paymentId = body.payment_id || query.payment_id || query.collection_id || "MP-" + Date.now();
-    const status = body.status || query.collection_status || query.status || "approved";
+    const paymentId = body.payment_id || query.payment_id || query.collection_id || "ADMIN-" + Date.now();
+    const status = body.status || query.collection_status || query.status || "active";
+    let expires = body.expires || query.expires || "";
 
-    let expires = "2036-12-31";
     const now = new Date();
-    const isMonthly = plan.includes("mes") || plan.includes("mensual") || plan.includes("month") || plan === "1_mes" || plan === "monthly";
 
-    if (isMonthly) {
-      const expDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      expires = expDate.toISOString().split("T")[0];
-    } else {
-      expires = "PERMANENTE";
+    if (!expires) {
+      if (plan.includes("demo_3") || plan.includes("3d") || plan.includes("3 días") || plan.includes("3 dias")) {
+        expires = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (plan.includes("demo_7") || plan.includes("7d") || plan.includes("7 días") || plan.includes("7 dias") || plan.includes("semana")) {
+        expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (plan.includes("demo_15") || plan.includes("15d") || plan.includes("15 días")) {
+        expires = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (plan.includes("mes") || plan.includes("mensual") || plan.includes("month") || plan === "1_mes") {
+        expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (plan.includes("3_meses") || plan.includes("3 meses")) {
+        expires = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (plan.includes("ano") || plan.includes("año") || plan.includes("1_ano")) {
+        expires = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else {
+        expires = "PERMANENTE";
+      }
     }
 
-    const planName = isMonthly ? "1 Mes ($49 MXN)" : "Permanente / Vitalicio";
+    let planName = body.planLabel || query.planLabel || "";
+    if (!planName) {
+      if (expires === "PERMANENTE") planName = "Permanente / Vitalicio";
+      else if (plan.includes("demo")) planName = "Prueba Gratis";
+      else planName = "SmarterTV PRO";
+    }
 
     const licenseData = {
       isPro: true,
-      device,
+      device: device || "Cualquier TV",
+      code: rawCode || (device ? "PRO-" + device.replace(/^TV-/, "") : "PRO-ADMIN"),
       plan: planName,
       expires,
       paymentId,
@@ -77,7 +94,8 @@ export default async function handler(req, res) {
       activatedAt: now.toISOString(),
     };
 
-    global.activeLicenses[device] = licenseData;
+    if (device) global.activeLicenses[device] = licenseData;
+    if (rawCode) global.activeLicenses[rawCode] = licenseData;
 
     // Save in /tmp
     try {
@@ -87,55 +105,88 @@ export default async function handler(req, res) {
       if (fs.existsSync(tmpFile)) {
         try { existing = JSON.parse(fs.readFileSync(tmpFile, "utf8")); } catch (_) {}
       }
-      existing[device] = licenseData;
+      if (device) existing[device] = licenseData;
+      if (rawCode) existing[rawCode] = licenseData;
       fs.writeFileSync(tmpFile, JSON.stringify(existing), "utf8");
     } catch (_) {}
 
-    // Save in KV / Upstash if configured
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      try {
-        await fetch(`${process.env.KV_REST_API_URL}/set/license_${device}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(JSON.stringify(licenseData)),
-        });
-      } catch (e) {
-        console.error("KV write error:", e);
-      }
-    }
-
     return res.status(200).json({
       success: true,
-      message: "¡Licencia activada con éxito!",
+      message: "¡Licencia / Código activado con éxito!",
       license: licenseData,
     });
   }
 
-  // 3. CHECK LICENSE STATUS
+  // 3. CHECK CODE (Canjear código en la app)
+  if (rawCode) {
+    let license = global.activeLicenses[rawCode];
+
+    // If not found in memory, evaluate code structure/prefix
+    if (!license) {
+      const now = new Date();
+      let plan = "SmarterTV PRO";
+      let expires = "PERMANENTE";
+
+      if (rawCode.startsWith("DEMO1-") || rawCode.includes("1DIA")) {
+        plan = "Prueba Gratis (1 Día)";
+        expires = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (rawCode.startsWith("DEMO3-") || rawCode.includes("3DIAS")) {
+        plan = "Prueba Gratis (3 Días)";
+        expires = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (rawCode.startsWith("DEMO7-") || rawCode.includes("7DIAS") || rawCode.includes("SEMANA")) {
+        plan = "Prueba Gratis (7 Días)";
+        expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (rawCode.startsWith("DEMO15-")) {
+        plan = "Prueba Gratis (15 Días)";
+        expires = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (rawCode.startsWith("PRO-") || rawCode.startsWith("DEMO30-") || rawCode.includes("MES")) {
+        plan = "1 Mes ($49 MXN)";
+        expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      } else if (rawCode.startsWith("PERM-") || rawCode.startsWith("VIP-") || rawCode === "PRO2026" || rawCode === "SMARTER" || rawCode === "PERMANENTE") {
+        plan = "Permanente / Vitalicio";
+        expires = "PERMANENTE";
+      } else if (rawCode.length >= 5) {
+        plan = "Cortesía Especial";
+        expires = "PERMANENTE";
+      }
+
+      if (plan) {
+        license = {
+          isPro: true,
+          code: rawCode,
+          device: device || "Vinculado",
+          plan,
+          expires,
+          activatedAt: now.toISOString(),
+        };
+        global.activeLicenses[rawCode] = license;
+        if (device) global.activeLicenses[device] = license;
+      }
+    }
+
+    if (license && license.isPro) {
+      if (device) {
+        global.activeLicenses[device] = license;
+      }
+      return res.status(200).json({
+        isPro: true,
+        code: rawCode,
+        device: device || license.device,
+        plan: license.plan,
+        expires: license.expires,
+        activatedAt: license.activatedAt,
+      });
+    }
+
+    return res.status(200).json({ isPro: false, error: "Código no válido o expirado" });
+  }
+
+  // 4. CHECK DEVICE STATUS (TV Polling)
   if (!device) {
-    return res.status(200).json({ isPro: false, error: "Device ID required" });
+    return res.status(200).json({ isPro: false, error: "Device ID o Code requerido" });
   }
 
   let license = global.activeLicenses[device];
-
-  // Try KV if configured
-  if (!license && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    try {
-      const kvRes = await fetch(`${process.env.KV_REST_API_URL}/get/license_${device}`, {
-        headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` },
-      });
-      if (kvRes.ok) {
-        const kvData = await kvRes.json();
-        if (kvData && kvData.result) {
-          license = typeof kvData.result === "string" ? JSON.parse(kvData.result) : kvData.result;
-          global.activeLicenses[device] = license;
-        }
-      }
-    } catch (_) {}
-  }
 
   if (license && license.isPro) {
     return res.status(200).json({

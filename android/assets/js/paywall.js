@@ -14,6 +14,8 @@ const PaywallManager = (() => {
     IS_PRO: "smartertv_is_pro",
     SECONDS_LEFT: "smartertv_clean_seconds_left",
     PRO_KEY: "smartertv_pro_key",
+    PLAN_NAME: "smartertv_plan_name",
+    EXPIRES_AT: "smartertv_expires_at",
   };
 
   let checkoutBaseUrl = "https://iptv.keopstore.online/#pricing";
@@ -67,6 +69,21 @@ const PaywallManager = (() => {
     }
 
     isPro = localStorage.getItem(STORAGE_KEYS.IS_PRO) === "true";
+
+    // Verify expiration if active
+    if (isPro) {
+      const exp = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+      if (exp && exp !== "PERMANENTE") {
+        const expTime = new Date(exp + "T23:59:59").getTime();
+        if (!isNaN(expTime) && Date.now() > expTime) {
+          // Trial period or subscription expired!
+          isPro = false;
+          localStorage.removeItem(STORAGE_KEYS.IS_PRO);
+          secondsRemaining = 0;
+          localStorage.setItem(STORAGE_KEYS.SECONDS_LEFT, "0");
+        }
+      }
+    }
 
     const saved = localStorage.getItem(STORAGE_KEYS.SECONDS_LEFT);
     if (saved !== null) {
@@ -126,9 +143,18 @@ const PaywallManager = (() => {
     if (!badge) return;
 
     if (isPro) {
+      const plan = localStorage.getItem(STORAGE_KEYS.PLAN_NAME) || "PRO";
+      const exp = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+      let label = "💎 PRO ACTIVADO";
+      if (exp === "PERMANENTE") {
+        label = "💎 PRO PERMANENTE";
+      } else if (exp) {
+        label = `💎 PRO (${exp})`;
+      }
+
       badge.className = "trial-badge is-pro";
-      badge.innerHTML = '<span class="pulse-dot"></span> 💎 PRO ACTIVADO';
-      badge.onclick = () => alert("¡Tu membresía SmarterTV PRO está activa y sin anuncios!");
+      badge.innerHTML = `<span class="pulse-dot"></span> ${label}`;
+      badge.onclick = () => alert(`¡Membresía SmarterTV PRO Activa!\nPlan: ${plan}\nVencimiento: ${exp || "Ilimitado / Permanente"}`);
       return;
     }
 
@@ -215,7 +241,7 @@ const PaywallManager = (() => {
         const data = await res.json();
         if (data && data.isPro) {
           stopLicensePolling();
-          activatePro("MP-AUTO-" + (data.plan || "ONLINE"));
+          activatePro("MP-AUTO-" + (data.plan || "ONLINE"), data.plan || "PRO", data.expires || "PERMANENTE");
           showTvNotification("🎉 ¡Membresía SmarterTV PRO activada automáticamente!");
         }
       }
@@ -317,22 +343,82 @@ const PaywallManager = (() => {
     if (testBtn) testBtn.onclick = () => activatePro("DEMO-PRO");
   }
 
-  function handleManualUnlock() {
+  async function handleManualUnlock() {
     const input = document.getElementById("manualProCode");
     const code = input ? input.value.trim().toUpperCase() : "";
 
-    if (code === "PRO2026" || code === "SMARTER" || code.startsWith("TV-") || code.length >= 6) {
-      activatePro(code);
-      alert("¡Membresía SmarterTV PRO activada! Los anuncios han sido eliminados.");
-    } else {
-      alert("Código de activación inválido. Verifica tu comprobante.");
+    if (!code) {
+      alert("Por favor escribe tu código de activación.");
+      return;
     }
+
+    // 1. Intentar validar código en el servidor online
+    try {
+      const res = await fetch(`https://iptv.keopstore.online/api/license?code=${encodeURIComponent(code)}&device=${encodeURIComponent(deviceId)}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.isPro) {
+          activatePro(code, data.plan, data.expires);
+          const expText = data.expires === "PERMANENTE" ? "De por vida (Sin vencimiento)" : `Válido hasta: ${data.expires}`;
+          alert(`🎉 ¡SmarterTV PRO Activado con Éxito!\n\nPlan: ${data.plan || "PRO"}\n${expText}\n\nLos anuncios han sido eliminados por completo.`);
+          return;
+        }
+      }
+    } catch (_) {
+      // Si la tele no tiene internet en ese segundo, usa el decodificador local
+    }
+
+    // 2. Decodificador local por prefijo (Funciona offline o para demos y permanentes)
+    let plan = "SmarterTV PRO";
+    let expires = "PERMANENTE";
+    const now = new Date();
+
+    if (code.startsWith("DEMO1-") || code.includes("1DIA")) {
+      plan = "Prueba Gratis (1 Día)";
+      expires = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("DEMO3-") || code.includes("3DIAS")) {
+      plan = "Prueba Gratis (3 Días)";
+      expires = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("DEMO7-") || code.includes("7DIAS") || code.includes("SEMANA")) {
+      plan = "Prueba Gratis (7 Días)";
+      expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("DEMO15-")) {
+      plan = "Prueba Gratis (15 Días)";
+      expires = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("PRO3-")) {
+      plan = "Suscripción 3 Meses";
+      expires = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("PRO12-")) {
+      plan = "Suscripción 1 Año";
+      expires = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("PRO-") || code.startsWith("DEMO30-") || code.includes("MES")) {
+      plan = "Suscripción 1 Mes";
+      expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    } else if (code.startsWith("PERM-") || code.startsWith("VIP-") || code === "PRO2026" || code === "SMARTER" || code === "PERMANENTE") {
+      plan = "Permanente / Vitalicio";
+      expires = "PERMANENTE";
+    } else if (code.startsWith("TV-") || code.length >= 5) {
+      plan = "Cortesía Especial";
+      expires = "PERMANENTE";
+    } else {
+      alert("Código de activación inválido. Verifica el código entregado.");
+      return;
+    }
+
+    activatePro(code, plan, expires);
+    const expMsg = expires === "PERMANENTE" ? "Acceso Permanente (Sin Vencimiento)" : `Válido hasta: ${expires}`;
+    alert(`🎉 ¡SmarterTV PRO Activado!\n\nPlan: ${plan}\n${expMsg}\n\nLos anuncios han sido eliminados.`);
   }
 
-  function activatePro(key) {
+  function activatePro(key, planName, expiresAt) {
     isPro = true;
     localStorage.setItem(STORAGE_KEYS.IS_PRO, "true");
     localStorage.setItem(STORAGE_KEYS.PRO_KEY, key || "ACTIVATED");
+    if (planName) localStorage.setItem(STORAGE_KEYS.PLAN_NAME, planName);
+    if (expiresAt) localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt);
+
     if (timerInterval) clearInterval(timerInterval);
     stopLicensePolling();
 
