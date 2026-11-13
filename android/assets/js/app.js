@@ -342,6 +342,7 @@ const App = (() => {
 
     if (titleEl) titleEl.textContent = item.name || item.title || "Transmisión";
     playerContainer.style.display = "flex";
+    document.body.classList.add("player-active");
 
     // Notify Android container that video player is active (for auto-PiP when leaving app)
     if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
@@ -409,6 +410,7 @@ const App = (() => {
     video.removeAttribute("src");
     video.load();
 
+    document.body.classList.remove("player-active");
     playerContainer.style.display = "none";
     PaywallManager.pauseTrialTimer();
   }

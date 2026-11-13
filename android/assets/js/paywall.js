@@ -70,6 +70,16 @@ const PaywallManager = (() => {
 
     isPro = localStorage.getItem(STORAGE_KEYS.IS_PRO) === "true";
 
+    // Clean up any temporary demo/test unlock so users must activate with real code
+    const currentKey = localStorage.getItem(STORAGE_KEYS.PRO_KEY);
+    if (currentKey === "DEMO-PRO" || currentKey === "DEMO" || currentKey === "ACTIVATED") {
+      isPro = false;
+      localStorage.removeItem(STORAGE_KEYS.IS_PRO);
+      localStorage.removeItem(STORAGE_KEYS.PRO_KEY);
+      localStorage.removeItem(STORAGE_KEYS.PLAN_NAME);
+      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+    }
+
     // Verify expiration if active
     if (isPro) {
       const exp = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
@@ -354,9 +364,6 @@ const PaywallManager = (() => {
 
     const unlockBtn = document.getElementById("unlockProBtn");
     if (unlockBtn) unlockBtn.onclick = handleManualUnlock;
-
-    const testBtn = document.getElementById("testPaywallUnlockBtn");
-    if (testBtn) testBtn.onclick = () => activatePro("DEMO-PRO");
   }
 
   async function handleManualUnlock() {
@@ -386,18 +393,18 @@ const PaywallManager = (() => {
       // Si la tele no tiene internet en ese segundo, usa el decodificador local
     }
 
-    // 2. Decodificador local por prefijo (Funciona offline o para demos y permanentes)
+    // 2. Decodificador local por prefijo oficial (Códigos generados por el administrador)
     let plan = "SmarterTV PRO";
     let expires = "PERMANENTE";
     const now = new Date();
 
-    if (code.startsWith("DEMO1-") || code.includes("1DIA")) {
+    if (code.startsWith("DEMO1-") || code === "1DIA") {
       plan = "Prueba Gratis (1 Día)";
       expires = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    } else if (code.startsWith("DEMO3-") || code.includes("3DIAS")) {
+    } else if (code.startsWith("DEMO3-") || code === "3DIAS") {
       plan = "Prueba Gratis (3 Días)";
       expires = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    } else if (code.startsWith("DEMO7-") || code.includes("7DIAS") || code.includes("SEMANA")) {
+    } else if (code.startsWith("DEMO7-") || code === "7DIAS") {
       plan = "Prueba Gratis (7 Días)";
       expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     } else if (code.startsWith("DEMO15-")) {
@@ -409,17 +416,14 @@ const PaywallManager = (() => {
     } else if (code.startsWith("PRO12-")) {
       plan = "Suscripción 1 Año";
       expires = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    } else if (code.startsWith("PRO-") || code.startsWith("DEMO30-") || code.includes("MES")) {
+    } else if (code.startsWith("MES-") || code.startsWith("PRO1-") || code.startsWith("DEMO30-")) {
       plan = "Suscripción 1 Mes";
       expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    } else if (code.startsWith("PERM-") || code.startsWith("VIP-") || code === "PRO2026" || code === "SMARTER" || code === "PERMANENTE") {
+    } else if (code.startsWith("PERM-") || code.startsWith("VIP-") || code === "PRO2026") {
       plan = "Permanente / Vitalicio";
       expires = "PERMANENTE";
-    } else if (code.startsWith("TV-") || code.length >= 5) {
-      plan = "Cortesía Especial";
-      expires = "PERMANENTE";
     } else {
-      alert("Código de activación inválido. Verifica el código entregado.");
+      alert("❌ Código de activación no válido.\n\nPor favor verifica el código entregado por el administrador o adquiere tu plan en línea.");
       return;
     }
 
