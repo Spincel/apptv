@@ -348,6 +348,9 @@ const App = (() => {
     if (titleEl) titleEl.textContent = item.name || item.title || "Transmisión";
     playerContainer.style.display = "flex";
     document.body.classList.add("player-active");
+    if (window.PaywallManager && window.PaywallManager.syncVideoControls) {
+      window.PaywallManager.syncVideoControls();
+    }
 
     // Notify Android container that video player is active (for auto-PiP when leaving app)
     if (window.AndroidBridge && window.AndroidBridge.setPlayerActive) {
@@ -466,6 +469,29 @@ const App = (() => {
     // Close Player Button
     const closePlayerBtn = document.getElementById("closePlayerBtn");
     if (closePlayerBtn) closePlayerBtn.onclick = closePlayer;
+
+    // Video Player Fullscreen & Interception
+    const video = document.getElementById("videoPlayer");
+    if (video) {
+      video.addEventListener("dblclick", (e) => {
+        if (!PaywallManager.isProActive()) {
+          e.preventDefault();
+          PaywallManager.openProModal();
+        }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        if (!PaywallManager.isProActive() && document.fullscreenElement === video) {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          PaywallManager.openProModal();
+        }
+      });
+      document.addEventListener("webkitfullscreenchange", () => {
+        if (!PaywallManager.isProActive() && document.webkitFullscreenElement === video) {
+          if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          PaywallManager.openProModal();
+        }
+      });
+    }
 
     // Search Input
     const searchInput = document.getElementById("globalSearchInput");

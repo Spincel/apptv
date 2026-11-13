@@ -104,14 +104,33 @@ const PaywallManager = (() => {
     updateHeaderBadge();
     bindProModalEvents();
 
-    // If clean preview time already expired in a previous session, show ad sidebar smoothly
-    if (!isPro && secondsRemaining <= 0) {
-      showAdSidebar();
+    if (isPro) {
+      document.body.classList.add("user-is-pro");
+      document.body.classList.remove("ads-sidebar-active");
+    } else {
+      document.body.classList.remove("user-is-pro");
+      // If clean preview time already expired in a previous session, show ad sidebar smoothly
+      if (secondsRemaining <= 0) {
+        showAdSidebar();
+      }
     }
+
+    syncVideoControls();
 
     // Verify online license status in background
     if (!isPro) {
       checkLicenseStatusOnline();
+    }
+  }
+
+  function syncVideoControls() {
+    const video = document.getElementById("videoPlayer");
+    if (!video) return;
+    if (isPro) {
+      video.removeAttribute("controlsList");
+    } else {
+      // In Free Mode: prevent native fullscreen bypass so ads cannot be hidden!
+      video.setAttribute("controlsList", "nofullscreen nodownload noplaybackrate");
     }
   }
 
@@ -439,10 +458,14 @@ const PaywallManager = (() => {
     if (planName) localStorage.setItem(STORAGE_KEYS.PLAN_NAME, planName);
     if (expiresAt) localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt);
 
+    document.body.classList.add("user-is-pro");
+    document.body.classList.remove("ads-sidebar-active");
+
     if (timerInterval) clearInterval(timerInterval);
     stopLicensePolling();
 
     hideAdSidebar();
+    syncVideoControls();
     closeProModal();
     updateHeaderBadge();
   }
@@ -454,6 +477,7 @@ const PaywallManager = (() => {
     openProModal,
     closeProModal,
     activatePro,
+    syncVideoControls,
     getDeviceId: () => deviceId,
     isProActive: () => isPro,
   };
