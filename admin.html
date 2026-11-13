@@ -279,8 +279,11 @@
             <h3 style="font-size: 1.25rem; font-weight: 700;">Clientes y Licencias PRO Activas</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">Administra qué televisiones tienen activado el modo sin anuncios</p>
           </div>
-          <div>
-            <input type="text" id="adminSearchInput" onkeyup="filterLicenses()" placeholder="Buscar cliente o código..." class="form-input" style="width: 260px; font-size: 0.88rem;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" onclick="syncOnlineLicenses()" class="btn btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; gap: 6px; color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+              🔄 Sincronizar Pagos Online
+            </button>
+            <input type="text" id="adminSearchInput" onkeyup="filterLicenses()" placeholder="Buscar cliente o código..." class="form-input" style="width: 240px; font-size: 0.88rem;">
           </div>
         </div>
 
@@ -360,20 +363,34 @@
 
           <form id="settingsForm" onsubmit="saveAdminSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
-              <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
-              <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX" value="https://iptv.keopstore.online/#pricing">
-              <span class="form-help">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
+              <label class="form-label">Enlace Mercado Pago - Plan 1 Mes ($49 MXN)</label>
+              <input type="url" id="cfgMp1Mes" class="form-input" placeholder="https://mpago.la/XXXXX" value="https://mpago.la/1PZuSrR">
+              <span class="form-help">Enlace directo de pago para la suscripción mensual de $49 MXN.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Enlace Mercado Pago - Plan Permanente (Vitalicio)</label>
+              <input type="url" id="cfgMpPermanente" class="form-input" placeholder="https://mpago.la/XXXXX" value="https://mpago.la/3396jnv">
+              <span class="form-help">Enlace directo de pago único permanente de por vida.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">URL Base de Pasarela / Landing (QR de la TV)</label>
+              <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://iptv.keopstore.online/#pricing" value="https://iptv.keopstore.online/#pricing">
+              <span class="form-help">Cuando la TV muestra el código QR, envía al cliente a este portal con su ID de televisor adjunto.</span>
             </div>
 
             <div class="form-group">
               <label class="form-label">ID de Editor de Google AdSense / AdMob</label>
               <input type="text" id="cfgAdSenseId" class="form-input" placeholder="ca-pub-1234567890123456" value="ca-pub-8020880380669433">
-              <span class="form-help">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
+              <span class="form-help">Tus banners laterales se vincularán a esta cuenta para recibir tus ingresos publicitarios.</span>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Precio Mensual Recomendado</label>
-              <input type="text" id="cfgPrice" class="form-input" value="$49 MXN / mes">
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; font-size: 0.82rem; color: #c7d2fe; line-height: 1.5;">
+              📌 <strong>Configuración en Mercado Pago para Activación Automática:</strong><br>
+              En tu cuenta de Mercado Pago ve a <em>Herramientas &gt; Enlaces de pago &gt; Editar enlace &gt; Configuración avanzada</em>:<br>
+              • <strong>Redireccionar a tu sitio web (URL de éxito):</strong> <code>https://iptv.keopstore.online/payment-success.html</code><br>
+              • Marca la casilla: <strong>"Redireccionar automáticamente al comprador después de pagar"</strong>.
             </div>
 
             <button type="submit" class="btn btn-primary" style="margin-top: 4px;">
@@ -968,13 +985,21 @@
       updateKpiStats();
 
       // Load saved settings
+      const savedMp1 = localStorage.getItem("smartertv_cfg_mp_1mes");
+      if (savedMp1 && document.getElementById("cfgMp1Mes")) {
+        document.getElementById("cfgMp1Mes").value = savedMp1;
+      }
+      const savedMpPerma = localStorage.getItem("smartertv_cfg_mp_permanente");
+      if (savedMpPerma && document.getElementById("cfgMpPermanente")) {
+        document.getElementById("cfgMpPermanente").value = savedMpPerma;
+      }
       const savedCheckout = localStorage.getItem("smartertv_cfg_checkout_url");
       if (savedCheckout && document.getElementById("cfgCheckoutUrl")) {
         document.getElementById("cfgCheckoutUrl").value = savedCheckout;
       }
-      const savedPrice = localStorage.getItem("smartertv_cfg_price");
-      if (savedPrice && document.getElementById("cfgPrice")) {
-        document.getElementById("cfgPrice").value = savedPrice;
+      const savedAdSense = localStorage.getItem("smartertv_cfg_adsense_id");
+      if (savedAdSense && document.getElementById("cfgAdSenseId")) {
+        document.getElementById("cfgAdSenseId").value = savedAdSense;
       }
     }
 
@@ -1091,17 +1116,60 @@
       renderLicensesTable(filtered);
     }
 
+    async function syncOnlineLicenses() {
+      try {
+        const res = await fetch("/api/check-license?all=true");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.licenses) {
+            let addedCount = 0;
+            Object.keys(data.licenses).forEach(devId => {
+              const item = data.licenses[devId];
+              const cleanCode = "PRO-" + devId.replace(/^TV-/, "");
+              const exists = licenses.some(l => l.device === devId || l.code === cleanCode);
+              if (!exists) {
+                licenses.unshift({
+                  id: Date.now() + Math.random(),
+                  client: "Cliente Mercado Pago (" + (item.paymentId || "Online") + ")",
+                  device: devId,
+                  code: cleanCode,
+                  plan: item.plan || "PRO",
+                  expires: item.expires || "2036-12-31",
+                  status: "active"
+                });
+                addedCount++;
+              }
+            });
+            if (addedCount > 0) {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+              renderLicensesTable(licenses);
+              updateKpiStats();
+              alert(`🎉 ¡Sincronización completada!\nSe detectaron ${addedCount} nueva(s) licencia(s) activadas vía Mercado Pago.`);
+            } else {
+              alert("✔ Todas las licencias online ya se encuentran sincronizadas.");
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+      alert("No se encontraron nuevas licencias online en este momento.");
+    }
+
     function saveAdminSettings(e) {
       e.preventDefault();
+      const mp1 = (document.getElementById("cfgMp1Mes").value || "").trim();
+      const mpPerma = (document.getElementById("cfgMpPermanente").value || "").trim();
       const checkoutUrl = (document.getElementById("cfgCheckoutUrl").value || "").trim();
       const adsenseId = (document.getElementById("cfgAdSenseId").value || "").trim();
-      const price = (document.getElementById("cfgPrice").value || "").trim();
 
+      localStorage.setItem("smartertv_cfg_mp_1mes", mp1);
+      localStorage.setItem("smartertv_cfg_mp_permanente", mpPerma);
       localStorage.setItem("smartertv_cfg_checkout_url", checkoutUrl);
       localStorage.setItem("smartertv_cfg_adsense_id", adsenseId);
-      localStorage.setItem("smartertv_cfg_price", price);
 
-      alert("🎉 ¡Configuración de pagos y AdSense guardada con éxito!");
+      alert("🎉 ¡Configuración de pasarelas Mercado Pago y AdSense guardada con éxito!");
     }
 
     document.addEventListener("DOMContentLoaded", checkAdminAuth);

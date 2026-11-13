@@ -65,6 +65,11 @@
     </nav>
   </header>
 
+  <!-- Banner de detección de TV al escanear QR -->
+  <div id="deviceDetectedBanner" style="display: none; background: linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(99, 102, 241, 0.18)); border-bottom: 1px solid rgba(16, 185, 129, 0.35); padding: 12px 20px; text-align: center; font-size: 0.92rem; color: #34d399;">
+    📺 <strong>¡Televisor Conectado!</strong> ID: <span id="bannerDeviceId" style="font-family: monospace; font-weight: 800; color: #fbbf24;"></span>. Al completar tu pago, tu TV se activará automáticamente sin teclear nada.
+  </div>
+
   <!-- Main Web Layout with Right Ad Sidebar -->
   <div class="web-layout">
 
@@ -206,10 +211,10 @@
       <section id="pricing" class="section">
         <div class="section-header">
           <h2 class="section-title">Elige tu Plan</h2>
-          <p style="color: var(--text-muted);">Prueba gratis sin compromiso o pásate a PRO para disfrutar de pantalla completa.</p>
+          <p style="color: var(--text-muted);">Prueba gratis sin compromiso o pásate a PRO para disfrutar de pantalla completa sin anuncios.</p>
         </div>
 
-        <div class="pricing-grid">
+        <div class="pricing-grid" style="max-width: 960px;">
           <!-- Free Plan -->
           <div class="price-card">
             <h3 style="font-size: 1.3rem;">Plan Básico</h3>
@@ -227,26 +232,49 @@
             <a href="/download/smartertv.apk" class="btn btn-secondary" style="margin-top: auto;">Descargar Gratis</a>
           </div>
 
-          <!-- PRO Plan -->
+          <!-- PRO Mensual Plan -->
           <div class="price-card featured">
             <div style="position: absolute; top: -12px; right: 24px; background: linear-gradient(135deg, #f59e0b, #ef4444); color:#fff; font-size:0.75rem; font-weight:800; padding:4px 12px; border-radius:9999px;">
               MÁS POPULAR
             </div>
 
-            <h3 style="font-size: 1.3rem; color: #fbbf24;">SmarterTV PRO</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Experiencia cinematográfica premium al 100%.</p>
+            <h3 style="font-size: 1.3rem; color: #fbbf24;">PRO Mensual</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Libertad mes a mes sin contratos forzosos.</p>
             <div class="price-tag">$49 <span style="font-size:1.1rem;">MXN / mes</span></div>
 
             <ul class="feature-list">
               <li><span>✨</span> <strong>Cero Anuncios:</strong> Pantalla 100% completa siempre</li>
               <li><span>✨</span> Máxima fluidez y calidad 4K Ultra HD</li>
-              <li><span>✨</span> Acceso hasta en 3 dispositivos simultáneos</li>
+              <li><span>✨</span> Hasta 3 dispositivos simultáneos</li>
               <li><span>✨</span> Soporte prioritario vía WhatsApp</li>
-              <li><span>✨</span> Activación automática instantánea</li>
+              <li><span>✨</span> Activación automática instantánea en tu TV</li>
             </ul>
 
-            <a href="javascript:void(0)" onclick="openCheckoutModal()" class="btn btn-gold" style="margin-top: auto;">
-              Obtener SmarterTV PRO
+            <a href="javascript:void(0)" onclick="openCheckoutModal('mensual')" class="btn btn-gold" style="margin-top: auto;">
+              Contratar 1 Mes ($49 MXN)
+            </a>
+          </div>
+
+          <!-- PRO Permanente Plan -->
+          <div class="price-card" style="border-color: rgba(99, 102, 241, 0.4); background: linear-gradient(180deg, rgba(99,102,241,0.06), var(--bg-card));">
+            <div style="position: absolute; top: -12px; right: 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:#fff; font-size:0.75rem; font-weight:800; padding:4px 12px; border-radius:9999px;">
+              PAGO ÚNICO
+            </div>
+
+            <h3 style="font-size: 1.3rem; color: #a5b4fc;">PRO Permanente</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Acceso vitalicio ilimitado de por vida.</p>
+            <div class="price-tag">VITALICIO <span style="font-size:1.0rem;">Pago Único</span></div>
+
+            <ul class="feature-list">
+              <li><span>👑</span> <strong>Cero Anuncios de por vida</strong></li>
+              <li><span>👑</span> Calidad 4K Ultra HD y sonido surround</li>
+              <li><span>👑</span> Sin renovaciones ni mensualidades futuras</li>
+              <li><span>👑</span> Soporte prioritario VIP permanente</li>
+              <li><span>✨</span> Activación automática instantánea en tu TV</li>
+            </ul>
+
+            <a href="javascript:void(0)" onclick="openCheckoutModal('permanente')" class="btn btn-primary" style="margin-top: auto; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+              Obtener Plan Permanente
             </a>
           </div>
         </div>
@@ -310,27 +338,36 @@
 
   <!-- Modal Checkout SmarterTV PRO -->
   <div id="checkoutModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px);">
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 32px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 32px 28px; max-width: 460px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
       <div style="font-size: 2.2rem; margin-bottom: 8px;">👑</div>
       <h3 style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin-bottom: 6px;">SmarterTV PRO</h3>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
-        Disfruta de streaming 4K ilimitado sin cortes ni anuncios por solo <strong>$49 MXN / mes</strong>.
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+        Disfruta de streaming 4K ilimitado sin cortes ni publicidad en tu televisor.
       </p>
 
+      <div id="modalDeviceBadge" style="display: none; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 10px; margin-bottom: 16px; font-size: 0.85rem; color: #34d399;">
+        📺 Televisor vinculado: <strong id="modalDeviceId" style="font-family: monospace; color: white;"></strong>
+      </div>
+
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-        <!-- Botón Mercado Pago -->
-        <a id="mpCheckoutBtn" href="https://mpago.la/" target="_blank" class="btn btn-gold" style="padding: 13px; font-size: 0.95rem; justify-content: center; gap: 8px; text-decoration: none;">
-          <span>💳 Pagar con Mercado Pago / Tarjeta</span>
+        <!-- Botón Plan 1 Mes Mercado Pago -->
+        <a id="mpBtn1Mes" href="https://mpago.la/1PZuSrR" target="_blank" class="btn btn-gold" style="padding: 13px; font-size: 0.95rem; justify-content: center; gap: 8px; text-decoration: none;">
+          <span>🌟 Pagar Plan 1 Mes ($49 MXN)</span>
+        </a>
+
+        <!-- Botón Plan Permanente Mercado Pago -->
+        <a id="mpBtnPermanente" href="https://mpago.la/3396jnv" target="_blank" class="btn btn-primary" style="padding: 13px; font-size: 0.95rem; justify-content: center; gap: 8px; text-decoration: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+          <span>👑 Pagar Plan Permanente (Vitalicio)</span>
         </a>
 
         <!-- Botón WhatsApp -->
-        <a href="https://wa.me/?text=Hola,%20deseo%20activar%20mi%20suscripción%20SmarterTV%20PRO%20por%20$49%20MXN" target="_blank" class="btn btn-secondary" style="padding: 12px; font-size: 0.9rem; justify-content: center; gap: 8px; border-color: #25d366; color: #25d366; text-decoration: none;">
+        <a id="waPayBtn" href="https://wa.me/?text=Hola,%20deseo%20activar%20mi%20suscripción%20SmarterTV%20PRO" target="_blank" class="btn btn-secondary" style="padding: 12px; font-size: 0.9rem; justify-content: center; gap: 8px; border-color: #25d366; color: #25d366; text-decoration: none;">
           <span>💬 Pagar por WhatsApp / SPEI / OXXO</span>
         </a>
       </div>
 
       <div style="font-size: 0.78rem; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 16px;">
-        📺 <strong>¿Estás en tu tele?</strong> Escanea el código QR desde tu pantalla con la cámara de tu celular para que tu TV se active automáticamente.
+        ⚡ <strong>Activación 100% Automática:</strong> Al pagar en Mercado Pago, tu televisor se desbloqueará de inmediato sin necesidad de ingresar códigos.
       </div>
 
       <button type="button" onclick="closeCheckoutModal()" class="btn btn-secondary" style="width: 100%; justify-content: center; font-size: 0.85rem;">
@@ -340,18 +377,74 @@
   </div>
 
   <script>
-    function openCheckoutModal() {
-      const savedLink = localStorage.getItem("smartertv_cfg_checkout_url");
-      const btn = document.getElementById("mpCheckoutBtn");
-      if (savedLink && savedLink.startsWith("http") && !savedLink.includes("#pricing")) {
-        btn.href = savedLink;
+    const MP_1MES_URL = "https://mpago.la/1PZuSrR";
+    const MP_PERMANENTE_URL = "https://mpago.la/3396jnv";
+
+    function getDeviceFromUrl() {
+      let params = new URLSearchParams(window.location.search);
+      let dev = params.get("device") || params.get("id") || params.get("external_reference");
+      if (!dev && window.location.hash.includes("?")) {
+        const hashQuery = window.location.hash.split("?")[1];
+        params = new URLSearchParams(hashQuery);
+        dev = params.get("device") || params.get("id") || params.get("external_reference");
       }
+      if (dev) {
+        dev = dev.trim().toUpperCase();
+        sessionStorage.setItem("smartertv_device", dev);
+        return dev;
+      }
+      return (sessionStorage.getItem("smartertv_device") || "").trim().toUpperCase();
+    }
+
+    function initCheckoutLinks() {
+      const dev = getDeviceFromUrl();
+      const btn1Mes = document.getElementById("mpBtn1Mes");
+      const btnPerma = document.getElementById("mpBtnPermanente");
+      const waBtn = document.getElementById("waPayBtn");
+      const banner = document.getElementById("deviceDetectedBanner");
+      const bannerId = document.getElementById("bannerDeviceId");
+      const modalBadge = document.getElementById("modalDeviceBadge");
+      const modalId = document.getElementById("modalDeviceId");
+
+      let refParam = dev ? `?external_reference=${encodeURIComponent(dev)}` : "";
+
+      if (btn1Mes) btn1Mes.href = MP_1MES_URL + refParam;
+      if (btnPerma) btnPerma.href = MP_PERMANENTE_URL + refParam;
+
+      if (waBtn) {
+        const text = dev 
+          ? `Hola, deseo activar mi membresía SmarterTV PRO para mi televisor con ID: ${dev}`
+          : `Hola, deseo activar mi membresía SmarterTV PRO`;
+        waBtn.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      }
+
+      if (dev) {
+        if (banner) {
+          banner.style.display = "block";
+          if (bannerId) bannerId.textContent = dev;
+        }
+        if (modalBadge) {
+          modalBadge.style.display = "block";
+          if (modalId) modalId.textContent = dev;
+        }
+      }
+    }
+
+    function openCheckoutModal(focusPlan) {
+      initCheckoutLinks();
       document.getElementById("checkoutModal").style.display = "flex";
+      if (focusPlan === "permanente") {
+        document.getElementById("mpBtnPermanente")?.focus();
+      } else {
+        document.getElementById("mpBtn1Mes")?.focus();
+      }
     }
 
     function closeCheckoutModal() {
       document.getElementById("checkoutModal").style.display = "none";
     }
+
+    window.addEventListener("DOMContentLoaded", initCheckoutLinks);
   </script>
 </body>
 </html>

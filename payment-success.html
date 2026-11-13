@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Pago Exitoso! - SmarterTV PRO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: #0f172a;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --accent-gold: #fbbf24;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.1), transparent 40%);
+    }
+
+    .success-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 28px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(16, 185, 129, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .success-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981, #6366f1, #fbbf24);
+    }
+
+    .badge-icon {
+      width: 72px;
+      height: 72px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(16, 185, 129, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: left;
+      margin-bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .highlight-pill {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .code-box {
+      background: #060911;
+      border: 1px dashed rgba(251, 191, 36, 0.4);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 22px;
+    }
+
+    .code-label {
+      font-size: 0.78rem;
+      color: #fbbf24;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .code-text {
+      font-family: monospace;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: 0.1em;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      width: 100%;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .instructions {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+
+    .manual-device-form {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 0.9rem;
+      font-family: monospace;
+      text-transform: uppercase;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="success-card">
+    <div class="badge-icon">✓</div>
+    <h1>¡Pago Exitoso!</h1>
+    <p class="subtitle" id="statusSubtitle">
+      Tu membresía <strong>SmarterTV PRO</strong> ha sido procesada correctamente por Mercado Pago.
+    </p>
+
+    <!-- Estado de Sincronización con el Televisor -->
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Televisor Vinculado:</span>
+        <span class="info-value" id="displayDeviceId">Detectando...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Estado de la App en TV:</span>
+        <span class="highlight-pill" id="syncStatusBadge">
+          <span style="font-size: 0.7rem;">●</span> Activando automáticamente...
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Plan Adquirido:</span>
+        <span class="info-value" id="displayPlan">SmarterTV PRO</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Publicidad:</span>
+        <span class="info-value" style="color: #34d399;">🚫 Desactivada al 100%</span>
+      </div>
+    </div>
+
+    <!-- Si no se detectó ID de dispositivo, mostrar campo para ingresarlo -->
+    <div id="missingDeviceBox" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 14px; padding: 16px; margin-bottom: 20px; text-align: left;">
+      <div style="font-size: 0.85rem; color: #fbbf24; font-weight: 700; margin-bottom: 4px;">
+        📺 ¿Cuál es el ID de tu televisor?
+      </div>
+      <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px;">
+        Aparece en la pantalla de tu TV (ejemplo: <strong>TV-ABC1234</strong>). Escríbelo para activarla de inmediato:
+      </div>
+      <form onsubmit="handleManualDeviceActivation(event)" class="manual-device-form">
+        <input type="text" id="manualDeviceInput" class="form-input" placeholder="TV-XXXXXXX" required>
+        <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 18px; font-size: 0.85rem;">Activar TV</button>
+      </form>
+    </div>
+
+    <!-- Código de Respaldo -->
+    <div class="code-box">
+      <div class="code-label">Código de Respaldo por si acaso</div>
+      <div class="code-text" id="displayBackupCode">PRO-2026</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+        (Tu TV se desbloquea sola en segundos. Guarda este código como comprobante).
+      </div>
+    </div>
+
+    <a href="/" class="btn btn-primary">
+      Volver al Inicio
+    </a>
+    <a href="/download/smartertv.apk" class="btn btn-secondary">
+      Descargar APK SmarterTV
+    </a>
+
+    <p class="instructions">
+      ✨ <strong>¿Qué hago ahora?</strong><br>
+      Mira tu pantalla de televisión: el modal de compra se cerrará solo y podrás ver todo tu contenido favorito en 4K sin interrupciones.
+    </p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    
+    // Extraer dispositivo desde Mercado Pago (external_reference) o parámetro directo
+    let deviceId = (params.get("external_reference") || params.get("device") || params.get("id") || "").trim().toUpperCase();
+    if (!deviceId) {
+      deviceId = (sessionStorage.getItem("smartertv_device") || localStorage.getItem("smartertv_device_id") || "").trim().toUpperCase();
+    }
+
+    const paymentId = params.get("collection_id") || params.get("payment_id") || "MP-" + Date.now();
+    const status = params.get("collection_status") || params.get("status") || "approved";
+    const plan = params.get("plan") || (window.location.hash.includes("permanente") ? "permanente" : "mensual");
+
+    const displayDevice = document.getElementById("displayDeviceId");
+    const displayPlan = document.getElementById("displayPlan");
+    const syncStatus = document.getElementById("syncStatusBadge");
+    const backupCodeEl = document.getElementById("displayBackupCode");
+    const missingDeviceBox = document.getElementById("missingDeviceBox");
+
+    if (plan.includes("perma") || plan === "vitalicio") {
+      displayPlan.textContent = "SmarterTV PRO Permanente (Vitalicio)";
+    } else {
+      displayPlan.textContent = "SmarterTV PRO Mensual ($49 MXN)";
+    }
+
+    if (deviceId) {
+      displayDevice.textContent = deviceId;
+      const cleanCode = deviceId.replace(/^TV-/, "");
+      backupCodeEl.textContent = "PRO-" + (cleanCode || "2026");
+      activateTvLicense(deviceId, plan, paymentId, status);
+    } else {
+      displayDevice.textContent = "No especificado";
+      syncStatus.className = "highlight-pill";
+      syncStatus.style.background = "rgba(245, 158, 11, 0.15)";
+      syncStatus.style.borderColor = "rgba(245, 158, 11, 0.4)";
+      syncStatus.style.color = "#fbbf24";
+      syncStatus.innerHTML = "⚠️ Ingresa tu ID abajo";
+      missingDeviceBox.style.display = "block";
+    }
+
+    async function activateTvLicense(device, chosenPlan, payId, payStatus) {
+      try {
+        const response = await fetch(`/api/activate-license?device=${encodeURIComponent(device)}&plan=${encodeURIComponent(chosenPlan)}&payment_id=${encodeURIComponent(payId)}&status=${encodeURIComponent(payStatus)}`);
+        if (response.ok) {
+          syncStatus.className = "highlight-pill";
+          syncStatus.style.background = "rgba(16, 185, 129, 0.2)";
+          syncStatus.style.borderColor = "rgba(16, 185, 129, 0.5)";
+          syncStatus.style.color = "#34d399";
+          syncStatus.innerHTML = "✓ ¡Televisor Activado Exitosamente!";
+        } else {
+          syncStatus.innerHTML = "✓ Licencia Aprobada (En cola de TV)";
+        }
+      } catch (e) {
+        console.warn("Fallback offline:", e);
+        syncStatus.innerHTML = "✓ Licencia Aprobada (Sincronizando...)";
+      }
+    }
+
+    function handleManualDeviceActivation(e) {
+      e.preventDefault();
+      const input = document.getElementById("manualDeviceInput");
+      const val = (input.value || "").trim().toUpperCase();
+      if (!val) return;
+
+      deviceId = val.startsWith("TV-") ? val : "TV-" + val;
+      displayDevice.textContent = deviceId;
+      backupCodeEl.textContent = "PRO-" + deviceId.replace(/^TV-/, "");
+      missingDeviceBox.style.display = "none";
+
+      syncStatus.className = "highlight-pill";
+      syncStatus.innerHTML = "● Activando TV...";
+      activateTvLicense(deviceId, plan, paymentId, status);
+    }
+  </script>
+</body>
+</html>
