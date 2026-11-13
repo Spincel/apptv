@@ -162,30 +162,71 @@
   <!-- GATE 2: Google Authenticator 2FA Login (Visible ONLY if 2FA is active) -->
   <div id="admin2faLoginGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
-      <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
-        🛡️
+      
+      <!-- SUB-VIEW A: Normal Google Authenticator 6-digit Code -->
+      <div id="totpSectionNormal">
+        <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
+          🛡️
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Protección 2FA Activa</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+          Abre tu aplicación <strong>Google Authenticator</strong> en tu celular e introduce tu código de 6 dígitos:
+        </p>
+
+        <form onsubmit="handle2faVerify(event)" style="display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <input type="text" id="loginTotpInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" autofocus autocomplete="one-time-code">
+          </div>
+
+          <div id="login2faError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+            ⚠️ Código inválido o expirado. Espera a que cambie en tu app e intenta de nuevo.
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="padding: 14px; font-size: 1rem; justify-content: center;">
+            Verificar y Entrar
+          </button>
+        </form>
+
+        <div style="margin-top: 20px;">
+          <a href="javascript:void(0)" onclick="switchToRecoveryCodeView()" style="color: #fbbf24; font-size: 0.82rem; text-decoration: none;">
+            ¿No tienes tu celular? Usar código de respaldo
+          </a>
+        </div>
       </div>
-      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Protección 2FA Activa</h2>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
-        Abre tu aplicación <strong>Google Authenticator</strong> en tu celular e introduce tu código de 6 dígitos:
-      </p>
 
-      <form onsubmit="handle2faVerify(event)" style="display: flex; flex-direction: column; gap: 18px;">
-        <div>
-          <input type="text" id="loginTotpInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" autofocus autocomplete="one-time-code">
+      <!-- SUB-VIEW B: One-time Backup Recovery Code -->
+      <div id="totpSectionRecovery" style="display: none;">
+        <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
+          🎟️
         </div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 8px;">Código de Respaldo</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+          Ingresa uno de tus 6 códigos de recuperación de un solo uso (ej: <code>KP-8492-01</code>):
+        </p>
 
-        <div id="login2faError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-          ⚠️ Código inválido o expirado. Espera a que cambie en tu app e intenta de nuevo.
+        <form onsubmit="handleRecoveryCodeSubmit(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <input type="text" id="recoveryCodeInput" class="form-input" placeholder="KP-XXXX-XX" style="text-align: center; font-family: monospace; font-size: 1.15rem; letter-spacing: 2px; text-transform: uppercase; padding: 12px;" required>
+          </div>
+
+          <div id="recoveryCodeError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+            ⚠️ Código de respaldo no encontrado o ya utilizado.
+          </div>
+
+          <button type="submit" class="btn btn-gold" style="padding: 13px; font-size: 0.95rem; justify-content: center;">
+            Desbloquear con Código
+          </button>
+        </form>
+
+        <div style="margin-top: 18px;">
+          <a href="javascript:void(0)" onclick="switchToTotpNormalView()" style="color: #38bdf8; font-size: 0.82rem; text-decoration: none;">
+            ← Volver a usar Google Authenticator
+          </a>
         </div>
+      </div>
 
-        <button type="submit" class="btn btn-primary" style="padding: 14px; font-size: 1rem; justify-content: center;">
-          Verificar y Entrar
-        </button>
-      </form>
-
-      <div style="margin-top: 24px; font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 16px;">
-        <a href="javascript:void(0)" onclick="cancel2faToLogin()" style="color: #38bdf8; text-decoration: none;">
+      <div style="margin-top: 24px; font-size: 0.82rem; border-top: 1px solid var(--border); padding-top: 16px;">
+        <a href="javascript:void(0)" onclick="cancel2faToLogin()" style="color: var(--text-muted); text-decoration: none;">
           ← Volver a ingresar usuario y contraseña
         </a>
       </div>
@@ -419,6 +460,30 @@
     </div>
   </div>
 
+  <!-- Modal Códigos de Respaldo de Un Solo Uso -->
+  <div id="backupCodesModal" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="text-align: center; max-width: 460px;">
+      <div style="font-size: 2.2rem; margin-bottom: 8px;">🎟️</div>
+      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Tus Códigos de Respaldo</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+        Guarda estos códigos en tus notas o imprímelos. Si pierdes tu celular, <strong>cada código puede usarse una sola vez</strong> para entrar al panel.
+      </p>
+
+      <div id="backupCodesListContainer" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: monospace; font-size: 1rem; color: #fbbf24; letter-spacing: 1.5px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="copyAllBackupCodes()" class="btn btn-primary" style="flex: 1; justify-content: center;">
+          📋 Copiar Códigos
+        </button>
+        <button type="button" onclick="closeBackupCodesModal()" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Crear Nueva Licencia PRO -->
   <div id="newLicenseModal" class="modal-overlay" style="display: none;">
     <div class="modal-box">
@@ -461,6 +526,7 @@
     const ADMIN_PASS_KEY = "smartertv_admin_password";
     const AUTH_2FA_KEY = "smartertv_2fa_enabled";
     const TOTP_SECRET_KEY = "smartertv_totp_secret";
+    const BACKUP_CODES_KEY = "smartertv_2fa_backup_codes";
 
     const DEFAULT_ADMIN_USER = "admin";
     const DEFAULT_ADMIN_PASS = "admin2026";
@@ -608,8 +674,101 @@
 
     function cancel2faToLogin() {
       document.getElementById("admin2faLoginGate").style.display = "none";
+      switchToTotpNormalView();
       document.getElementById("adminUserPassLoginGate").style.display = "flex";
       document.getElementById("loginPasswordInput").focus();
+    }
+
+    /* ================= ONE-TIME RECOVERY CODES ENGINE ================= */
+    function generateRandomBackupCodes() {
+      const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+      const codes = [];
+      for (let i = 0; i < 6; i++) {
+        let p1 = "";
+        let p2 = "";
+        for (let j = 0; j < 4; j++) p1 += chars.charAt(Math.floor(Math.random() * chars.length));
+        for (let j = 0; j < 2; j++) p2 += chars.charAt(Math.floor(Math.random() * chars.length));
+        codes.push(`KP-${p1}-${p2}`);
+      }
+      return codes;
+    }
+
+    function getBackupCodes() {
+      try {
+        const raw = localStorage.getItem(BACKUP_CODES_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return [];
+    }
+
+    function openBackupCodesModal() {
+      let codes = getBackupCodes();
+      if (!codes || codes.length === 0) {
+        codes = generateRandomBackupCodes();
+        localStorage.setItem(BACKUP_CODES_KEY, JSON.stringify(codes));
+      }
+      const container = document.getElementById("backupCodesListContainer");
+      if (container) {
+        container.innerHTML = codes.map(c => `<div style="background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:8px; border:1px solid rgba(251,191,36,0.3);">${c}</div>`).join("");
+      }
+      document.getElementById("backupCodesModal").style.display = "flex";
+    }
+
+    function closeBackupCodesModal() {
+      document.getElementById("backupCodesModal").style.display = "none";
+    }
+
+    function copyAllBackupCodes() {
+      const codes = getBackupCodes();
+      if (codes.length === 0) return;
+      const text = "CÓDIGOS DE RECUPERACIÓN SMARTERTV (1 SOLO USO CADA UNO):\n" + codes.join("\n");
+      navigator.clipboard.writeText(text);
+      alert("📋 ¡Códigos de recuperación copiados al portapapeles!\nGuárdalos en un lugar seguro (por ejemplo, en tus notas o gestor de claves).");
+    }
+
+    function switchToRecoveryCodeView() {
+      document.getElementById("totpSectionNormal").style.display = "none";
+      document.getElementById("totpSectionRecovery").style.display = "block";
+      const input = document.getElementById("recoveryCodeInput");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    function switchToTotpNormalView() {
+      document.getElementById("totpSectionRecovery").style.display = "none";
+      document.getElementById("totpSectionNormal").style.display = "block";
+      const input = document.getElementById("loginTotpInput");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    function handleRecoveryCodeSubmit(e) {
+      e.preventDefault();
+      const entered = (document.getElementById("recoveryCodeInput").value || "").trim().toUpperCase();
+      let codes = getBackupCodes();
+      const errorMsg = document.getElementById("recoveryCodeError");
+
+      const idx = codes.findIndex(c => c.toUpperCase() === entered);
+      if (idx !== -1) {
+        // Code is valid! Consume it (burn it)
+        codes.splice(idx, 1);
+        localStorage.setItem(BACKUP_CODES_KEY, JSON.stringify(codes));
+        if (errorMsg) errorMsg.style.display = "none";
+
+        isSessionUnlocked = true;
+        sessionStorage.setItem("smartertv_admin_session", "active");
+        switchToTotpNormalView();
+        checkAdminAuth();
+        alert(`🎉 ¡Código de recuperación aceptado!\nEste código ha sido quemado y ya no se puede reutilizar. Te quedan ${codes.length} códigos de respaldo.`);
+      } else {
+        if (errorMsg) errorMsg.style.display = "block";
+        document.getElementById("recoveryCodeInput").value = "";
+        document.getElementById("recoveryCodeInput").focus();
+      }
     }
 
     // Step 2: 2FA TOTP Verify Handler
@@ -657,6 +816,9 @@
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" onclick="openSetup2faModal()" class="btn btn-secondary" style="font-size: 0.85rem;">
               📱 Ver Código QR
+            </button>
+            <button type="button" onclick="openBackupCodesModal()" class="btn btn-secondary" style="font-size: 0.85rem; color: #fbbf24; border-color: rgba(251,191,36,0.3);">
+              🎟️ Códigos de Respaldo
             </button>
             <button type="button" onclick="disable2fa()" class="btn btn-secondary" style="font-size: 0.85rem; color: #f87171; border-color: rgba(239,68,68,0.3);">
               ❌ Desactivar 2FA
@@ -729,10 +891,17 @@
 
       if (isValid) {
         localStorage.setItem(AUTH_2FA_KEY, "true");
+        // Generate initial batch of 6 recovery codes
+        const codes = generateRandomBackupCodes();
+        localStorage.setItem(BACKUP_CODES_KEY, JSON.stringify(codes));
+
         closeSetup2faModal();
         update2faSettingsUI();
         if (errorMsg) errorMsg.style.display = "none";
-        alert("🎉 ¡Google Authenticator vinculado y activado con éxito!\nAhora se te solicitará el código de 6 dígitos cada vez que inicies sesión.");
+        
+        // Immediately show backup recovery codes modal
+        openBackupCodesModal();
+        alert("🎉 ¡Google Authenticator vinculado y activado con éxito!\n\nGuarda ahora tus 6 Códigos de Respaldo por si algún día pierdes o cambias de celular.");
       } else {
         if (errorMsg) errorMsg.style.display = "block";
         document.getElementById("setupVerifyCodeInput").value = "";
