@@ -122,7 +122,44 @@
 
   <!-- ================= AUTHENTICATION GATES ================= -->
 
-  <!-- GATE 1: Google Authenticator 2FA Login (Visible when 2FA is active) -->
+  <!-- GATE 1: Standard Username & Password Login (Always First) -->
+  <div id="adminUserPassLoginGate" style="display: flex; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
+      <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
+        🔐
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Panel de Administrador</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+        Introduce tu usuario y contraseña para acceder:
+      </p>
+
+      <form onsubmit="handleUserPassLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+        <div class="form-group">
+          <label class="form-label">Usuario</label>
+          <input type="text" id="loginUsernameInput" class="form-input" placeholder="admin" value="admin" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" id="loginPasswordInput" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <div id="loginUserPassError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          ⚠️ Usuario o contraseña incorrectos.
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 1rem; justify-content: center; margin-top: 4px;">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 14px;">
+        Acceso inicial por defecto: Usuario <code>admin</code> | Contraseña <code>admin2026</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE 2: Google Authenticator 2FA Login (Visible ONLY if 2FA is active) -->
   <div id="admin2faLoginGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
       <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 16px;">
@@ -130,7 +167,7 @@
       </div>
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Protección 2FA Activa</h2>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
-        Abre tu aplicación <strong>Google Authenticator</strong> en tu celular e introduce el código de 6 dígitos:
+        Abre tu aplicación <strong>Google Authenticator</strong> en tu celular e introduce tu código de 6 dígitos:
       </p>
 
       <form onsubmit="handle2faVerify(event)" style="display: flex; flex-direction: column; gap: 18px;">
@@ -143,59 +180,18 @@
         </div>
 
         <button type="submit" class="btn btn-primary" style="padding: 14px; font-size: 1rem; justify-content: center;">
-          Verificar y Desbloquear Panel
+          Verificar y Entrar
         </button>
       </form>
 
-      <div style="margin-top: 24px; font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 16px;">
+      <div style="margin-top: 24px; font-size: 0.82rem; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 16px;">
+        <a href="javascript:void(0)" onclick="cancel2faToLogin()" style="color: #38bdf8; text-decoration: none;">
+          ← Volver al login
+        </a>
         <a href="javascript:void(0)" onclick="toggleEmergencyMasterLogin()" style="color: var(--text-muted); text-decoration: none;">
-          🔑 Acceso de emergencia con Contraseña Maestra
+          🔑 Clave de emergencia
         </a>
       </div>
-    </div>
-  </div>
-
-  <!-- GATE 2: Initial Setup 2FA (Visible when 2FA has NOT been linked yet) -->
-  <div id="admin2faSetupGate" style="display: none; align-items: center; justify-content: center; min-height: calc(85vh - 70px); padding: 20px;">
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; max-width: 520px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
-      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
-        📲
-      </div>
-      <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 6px;">Vincular Google Authenticator</h2>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 18px;">
-        Blindarás tu panel para que nadie pueda hackearlo sin tu celular físico.
-      </p>
-
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 20px; text-align: left; font-size: 0.85rem; color: #d1d5db; display: flex; flex-direction: column; gap: 8px;">
-        <div><strong>1.</strong> Abre la app <strong>Google Authenticator</strong> (o Microsoft Authenticator).</div>
-        <div><strong>2.</strong> Toca el botón <strong>"+"</strong> y selecciona <strong>"Escanear código QR"</strong>.</div>
-        <div><strong>3.</strong> Apunta con tu cámara a este recuadro:</div>
-      </div>
-
-      <!-- QR Code Output -->
-      <div style="background: #ffffff; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
-        <div id="setupQrCodeContainer"></div>
-      </div>
-
-      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
-        O escribe esta clave secreta manualmente:<br>
-        <code id="setupSecretText" style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 1px;">...</code>
-      </div>
-
-      <form onsubmit="handle2faSetupConfirm(event)" style="display: flex; flex-direction: column; gap: 14px;">
-        <label style="font-size: 0.85rem; color: var(--text-muted); text-align: left;">
-          Escribe los 6 dígitos que ahora aparecen en tu celular:
-        </label>
-        <input type="text" id="setupVerifyCodeInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" required>
-
-        <div id="setup2faError" style="color: #ef4444; font-size: 0.85rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-          ⚠️ El código no coincide. Asegúrate de ingresar el que está corriendo ahora mismo en tu app.
-        </div>
-
-        <button type="submit" class="btn btn-gold" style="padding: 13px; font-size: 1rem; justify-content: center;">
-          ✔ Confirmar y Activar Protección 2FA
-        </button>
-      </form>
     </div>
   </div>
 
@@ -207,7 +203,7 @@
       </div>
       <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 8px;">Acceso de Emergencia</h2>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
-        Usa tu Contraseña Maestra de Respaldo:
+        Usa tu Contraseña Maestra de Respaldo por si perdiste tu celular:
       </p>
 
       <form onsubmit="handleMasterPasswordLogin(event)" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
@@ -225,7 +221,7 @@
         </button>
 
         <button type="button" onclick="cancelEmergencyLogin()" class="btn btn-secondary" style="padding: 10px; font-size: 0.85rem; justify-content: center;">
-          ← Volver a Google Authenticator
+          ← Volver
         </button>
       </form>
     </div>
@@ -380,33 +376,50 @@
           </form>
         </div>
 
+        <!-- Admin Credentials Section -->
+        <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: #818cf8;">👤 Credenciales de Administrador</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+            Modifica tu usuario o contraseña para entrar a este panel.
+          </p>
+
+          <form onsubmit="updateAdminCredentials(event)" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label">Usuario Administrador</label>
+              <input type="text" id="cfgAdminUsername" class="form-input" value="admin" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nueva Contraseña</label>
+              <input type="password" id="cfgAdminPassword" class="form-input" placeholder="Escribe tu nueva contraseña si deseas cambiarla">
+            </div>
+            <button type="submit" class="btn btn-secondary" style="align-self: flex-start; padding: 10px 20px;">
+              💾 Guardar Nuevas Credenciales
+            </button>
+          </form>
+        </div>
+
         <!-- 2FA Authenticator Management Section -->
         <div style="border-top: 1px solid var(--border); padding-top: 24px;">
           <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: #34d399;">🛡️ Seguridad en Dos Pasos (Google Authenticator)</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-            Tu panel está protegido con códigos dinámicos que cambian cada 30 segundos.
+            Protege tu panel solicitando un código dinámico de 6 dígitos desde tu celular después de ingresar tu usuario y contraseña.
           </p>
 
-          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <div style="font-weight: 700; color: #34d399; font-size: 0.95rem;">● Estado: 2FA ACTIVADO Y PROTEGIDO</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Solo quien tenga tu teléfono puede acceder al panel.</div>
-            </div>
-            <button type="button" onclick="show2faBackupModal()" class="btn btn-secondary" style="font-size: 0.85rem;">
-              📱 Ver Código QR o Clave
-            </button>
+          <!-- Dynamic 2FA Status Card -->
+          <div id="status2faCard" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <!-- Rendered by update2faSettingsUI() -->
           </div>
 
           <!-- Cambiar contraseña de respaldo -->
           <div class="form-group">
-            <label class="form-label">Contraseña Maestra de Respaldo</label>
+            <label class="form-label">Contraseña Maestra de Emergencia</label>
             <div style="display: flex; gap: 10px;">
-              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Nueva contraseña de emergencia">
+              <input type="password" id="newMasterPinInput" class="form-input" placeholder="Nueva clave de emergencia">
               <button type="button" onclick="updateMasterPin()" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
                 Actualizar Clave
               </button>
             </div>
-            <span class="form-help">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia.</span>
+            <span class="form-help">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia sin el código 2FA.</span>
           </div>
         </div>
 
@@ -415,24 +428,41 @@
 
   </div>
 
-  <!-- Modal Ver QR de Respaldo 2FA -->
-  <div id="backup2faModal" class="modal-overlay" style="display: none;">
-    <div class="modal-box" style="text-align: center;">
-      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Tu Llave de Google Authenticator</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Escanea este código si cambias de celular o deseas vincular un segundo teléfono.</p>
+  <!-- Modal Vincular / Ver Google Authenticator -->
+  <div id="setup2faModal" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="text-align: center; max-width: 480px;">
+      <h3 style="font-size: 1.3rem; margin-bottom: 6px;">Vincular Google Authenticator</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+        1. Abre Google Authenticator en tu celular.<br>
+        2. Toca el botón <strong>"+"</strong> y selecciona <strong>"Escanear código QR"</strong>:
+      </p>
 
-      <div style="background: #ffffff; padding: 14px; border-radius: 16px; display: inline-block; margin-bottom: 12px;">
-        <div id="backupQrCodeContainer"></div>
+      <div style="background: #ffffff; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+        <div id="setupQrCodeContainer"></div>
       </div>
 
       <div style="margin-bottom: 16px;">
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">CLAVE SECRETA (TEXTO):</div>
-        <code id="backupSecretText" style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 6px 14px; border-radius: 8px; font-weight: 700; letter-spacing: 1px;">...</code>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">O ESCRIBE ESTA CLAVE MANUALMENTE (BASE32):</div>
+        <code id="setupSecretText" style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 6px 14px; border-radius: 8px; font-weight: 700; letter-spacing: 1px; font-size: 0.95rem;">KEOPSIPTVSEC2345</code>
       </div>
 
-      <button type="button" onclick="document.getElementById('backup2faModal').style.display='none'" class="btn btn-primary" style="width: 100%; justify-content: center;">
-        Cerrar
-      </button>
+      <form onsubmit="confirmAndEnable2fa(event)" style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 0.82rem; color: var(--text-muted);">
+          Introduce los 6 dígitos que ahora muestra tu celular para confirmar:
+        </label>
+        <input type="text" id="setupVerifyCodeInput" maxlength="6" pattern="[0-9]*" class="totp-digit-input" placeholder="000000" required>
+        <div id="setupModalError" style="color: #ef4444; font-size: 0.82rem; display: none; background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px;">
+          ⚠️ Código incorrecto. Verifica los 6 dígitos de tu celular e intenta de nuevo.
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <button type="button" onclick="closeSetup2faModal()" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-gold" style="flex: 1; justify-content: center;">
+            ✔ Confirmar y Activar 2FA
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -475,11 +505,16 @@
   <script>
     const STORAGE_KEY = "smartertv_admin_licenses";
     const MASTER_PIN_KEY = "smartertv_admin_master_pin";
-    const AUTH_SESSION_KEY = "smartertv_admin_session";
+    const ADMIN_USER_KEY = "smartertv_admin_username";
+    const ADMIN_PASS_KEY = "smartertv_admin_password";
+    const AUTH_2FA_KEY = "smartertv_2fa_enabled";
     const TOTP_SECRET_KEY = "smartertv_totp_secret";
+
+    const DEFAULT_ADMIN_USER = "admin";
+    const DEFAULT_ADMIN_PASS = "admin2026";
     const DEFAULT_MASTER_PIN = "admin2026";
-    // Base 32 default secret seed for Keopstore SmarterTV
-    const DEFAULT_TOTP_SECRET = "KEOPSTORETV2026X";
+    // Standard RFC 4648 Base32 secret (16 chars, only A-Z and 2-7)
+    const DEFAULT_TOTP_SECRET = "KEOPSIPTVSEC2345";
 
     let licenses = [
       { id: 1, client: "Carlos Mendoza (Tepic)", device: "TV-84A9F2", code: "PRO-849201", plan: "1 Mes", expires: "2026-12-12", status: "active" },
@@ -546,7 +581,7 @@
 
     function getTotpSecret() {
       let sec = localStorage.getItem(TOTP_SECRET_KEY);
-      if (!sec) {
+      if (!sec || !/^[A-Z2-7]+$/.test(sec)) {
         sec = DEFAULT_TOTP_SECRET;
         localStorage.setItem(TOTP_SECRET_KEY, sec);
       }
@@ -557,87 +592,80 @@
     let isSessionUnlocked = false;
 
     function checkAdminAuth() {
-      // Check in-memory state or explicit temporary session token
-      const isRemembered = sessionStorage.getItem("smartertv_admin_remember_token") === "active";
-      const isAuth = isSessionUnlocked || isRemembered;
-      const isSetupDone = localStorage.getItem("smartertv_2fa_configured") === "true";
-
-      const loginGate = document.getElementById("admin2faLoginGate");
-      const setupGate = document.getElementById("admin2faSetupGate");
+      const isAuth = isSessionUnlocked || sessionStorage.getItem("smartertv_admin_session") === "active";
+      const userPassGate = document.getElementById("adminUserPassLoginGate");
+      const totpGate = document.getElementById("admin2faLoginGate");
       const emergencyGate = document.getElementById("adminEmergencyGate");
       const content = document.getElementById("adminProtectedContent");
       const navTools = document.getElementById("adminNavbarTools");
 
-      emergencyGate.style.display = "none";
-
       if (isAuth) {
-        loginGate.style.display = "none";
-        setupGate.style.display = "none";
-        content.style.display = "block";
-        navTools.style.display = "flex";
+        if (userPassGate) userPassGate.style.display = "none";
+        if (totpGate) totpGate.style.display = "none";
+        if (emergencyGate) emergencyGate.style.display = "none";
+        if (content) content.style.display = "block";
+        if (navTools) navTools.style.display = "flex";
         initAdminData();
+        update2faSettingsUI();
       } else {
-        content.style.display = "none";
-        navTools.style.display = "none";
-
-        if (!isSetupDone) {
-          // First time: Show setup QR code
-          loginGate.style.display = "none";
-          setupGate.style.display = "flex";
-          renderSetupQrCode();
-        } else {
-          // Already configured: Show 6-digit TOTP login
-          setupGate.style.display = "none";
-          loginGate.style.display = "flex";
-          const input = document.getElementById("loginTotpInput");
-          if (input) {
-            input.value = "";
-            input.focus();
-          }
+        if (content) content.style.display = "none";
+        if (navTools) navTools.style.display = "none";
+        if (totpGate) totpGate.style.display = "none";
+        if (emergencyGate) emergencyGate.style.display = "none";
+        if (userPassGate) {
+          userPassGate.style.display = "flex";
+          const userInput = document.getElementById("loginUsernameInput");
+          const passInput = document.getElementById("loginPasswordInput");
+          if (userInput) userInput.value = localStorage.getItem(ADMIN_USER_KEY) || DEFAULT_ADMIN_USER;
+          if (passInput) passInput.value = "";
         }
       }
     }
 
-    function renderSetupQrCode() {
-      const secret = getTotpSecret();
-      const textElem = document.getElementById("setupSecretText");
-      if (textElem) textElem.textContent = secret;
-
-      const container = document.getElementById("setupQrCodeContainer");
-      if (container && window.QRCode) {
-        container.innerHTML = "";
-        const otpauthUri = `otpauth://totp/SmarterTV%20Admin:keopstore?secret=${secret}&issuer=SmarterTV`;
-        new window.QRCode(container, {
-          text: otpauthUri,
-          width: 170,
-          height: 170,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: window.QRCode.CorrectLevel.M,
-        });
-      }
-    }
-
-    async function handle2faSetupConfirm(e) {
+    // Step 1: User & Password Login Handler
+    function handleUserPassLogin(e) {
       e.preventDefault();
-      const code = document.getElementById("setupVerifyCodeInput").value.trim();
-      const secret = getTotpSecret();
-      const isValid = await verifyTotpToken(code, secret);
-      const errorMsg = document.getElementById("setup2faError");
+      const enteredUser = (document.getElementById("loginUsernameInput").value || "").trim();
+      const enteredPass = (document.getElementById("loginPasswordInput").value || "").trim();
+      const validUser = localStorage.getItem(ADMIN_USER_KEY) || DEFAULT_ADMIN_USER;
+      const validPass = localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_ADMIN_PASS;
+      const errorMsg = document.getElementById("loginUserPassError");
 
-      if (isValid) {
-        localStorage.setItem("smartertv_2fa_configured", "true");
-        isSessionUnlocked = true;
+      if (enteredUser === validUser && enteredPass === validPass) {
         if (errorMsg) errorMsg.style.display = "none";
-        alert("🎉 ¡Google Authenticator vinculado con éxito!\nTu panel ahora está completamente blindado contra hackeos.");
-        checkAdminAuth();
+
+        // Check if 2FA is active
+        const is2faActive = localStorage.getItem(AUTH_2FA_KEY) === "true";
+        if (is2faActive) {
+          // Show 2FA input
+          document.getElementById("adminUserPassLoginGate").style.display = "none";
+          document.getElementById("admin2faLoginGate").style.display = "flex";
+          const totpInput = document.getElementById("loginTotpInput");
+          if (totpInput) {
+            totpInput.value = "";
+            totpInput.focus();
+          }
+        } else {
+          // Direct login
+          isSessionUnlocked = true;
+          sessionStorage.setItem("smartertv_admin_session", "active");
+          checkAdminAuth();
+        }
       } else {
         if (errorMsg) errorMsg.style.display = "block";
-        document.getElementById("setupVerifyCodeInput").value = "";
-        document.getElementById("setupVerifyCodeInput").focus();
+        document.getElementById("loginPasswordInput").value = "";
+        document.getElementById("loginPasswordInput").focus();
       }
     }
 
+    function cancel2faToLogin() {
+      document.getElementById("admin2faLoginGate").style.display = "none";
+      document.getElementById("adminEmergencyGate").style.display = "none";
+      document.getElementById("adminUserPassLoginGate").style.display = "flex";
+      document.getElementById("loginPasswordInput").focus();
+    }
+
+    // Step 2: 2FA TOTP Verify Handler
     async function handle2faVerify(e) {
       e.preventDefault();
       const code = document.getElementById("loginTotpInput").value.trim();
@@ -647,6 +675,7 @@
 
       if (isValid) {
         isSessionUnlocked = true;
+        sessionStorage.setItem("smartertv_admin_session", "active");
         if (errorMsg) errorMsg.style.display = "none";
         checkAdminAuth();
       } else {
@@ -677,6 +706,7 @@
 
       if (entered === masterPin) {
         isSessionUnlocked = true;
+        sessionStorage.setItem("smartertv_admin_session", "active");
         if (errorMsg) errorMsg.style.display = "none";
         checkAdminAuth();
       } else {
@@ -689,32 +719,140 @@
     function adminLogout() {
       isSessionUnlocked = false;
       sessionStorage.clear();
-      localStorage.removeItem("smartertv_admin_session");
-      localStorage.removeItem("smartertv_admin_session_v2");
-      localStorage.removeItem("smartertv_admin_session_v3");
-      localStorage.removeItem("smartertv_admin_remember_token");
       checkAdminAuth();
     }
 
-    function show2faBackupModal() {
-      const modal = document.getElementById("backup2faModal");
-      const secret = getTotpSecret();
-      document.getElementById("backupSecretText").textContent = secret;
+    /* ================= 2FA SETTINGS & QR CODE ENGINE ================= */
+    function update2faSettingsUI() {
+      const is2faActive = localStorage.getItem(AUTH_2FA_KEY) === "true";
+      const card = document.getElementById("status2faCard");
+      if (!card) return;
 
-      const container = document.getElementById("backupQrCodeContainer");
+      if (is2faActive) {
+        card.style.background = "rgba(16, 185, 129, 0.08)";
+        card.style.borderColor = "rgba(16, 185, 129, 0.25)";
+        card.innerHTML = `
+          <div>
+            <div style="font-weight: 700; color: #34d399; font-size: 0.95rem;">● Estado: 2FA ACTIVADO Y PROTEGIDO</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Cada inicio de sesión solicita el código dinámico de tu celular.
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" onclick="openSetup2faModal()" class="btn btn-secondary" style="font-size: 0.85rem;">
+              📱 Ver Código QR
+            </button>
+            <button type="button" onclick="disable2fa()" class="btn btn-secondary" style="font-size: 0.85rem; color: #f87171; border-color: rgba(239,68,68,0.3);">
+              ❌ Desactivar 2FA
+            </button>
+          </div>
+        `;
+      } else {
+        card.style.background = "rgba(255, 255, 255, 0.03)";
+        card.style.borderColor = "var(--border)";
+        card.innerHTML = `
+          <div>
+            <div style="font-weight: 700; color: #fbbf24; font-size: 0.95rem;">● Estado: 2FA DESACTIVADO (Solo Contraseña)</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Puedes entrar directamente con tu usuario y contraseña.
+            </div>
+          </div>
+          <div>
+            <button type="button" onclick="openSetup2faModal()" class="btn btn-gold" style="font-size: 0.85rem;">
+              🛡️ Activar Google Authenticator
+            </button>
+          </div>
+        `;
+      }
+
+      // Fill current credentials in form
+      const userElem = document.getElementById("cfgAdminUsername");
+      if (userElem) userElem.value = localStorage.getItem(ADMIN_USER_KEY) || DEFAULT_ADMIN_USER;
+    }
+
+    function openSetup2faModal() {
+      const modal = document.getElementById("setup2faModal");
+      const secret = getTotpSecret();
+      const secretElem = document.getElementById("setupSecretText");
+      if (secretElem) secretElem.textContent = secret;
+
+      const container = document.getElementById("setupQrCodeContainer");
       if (container && window.QRCode) {
         container.innerHTML = "";
-        const otpauthUri = `otpauth://totp/SmarterTV%20Admin:keopstore?secret=${secret}&issuer=SmarterTV`;
+        // Compliant RFC 6238 otpauth URI
+        const otpauthUri = `otpauth://totp/SmarterTV:admin?secret=${secret}&issuer=SmarterTV`;
         new window.QRCode(container, {
           text: otpauthUri,
-          width: 170,
-          height: 170,
+          width: 180,
+          height: 180,
           colorDark: "#000000",
           colorLight: "#ffffff",
           correctLevel: window.QRCode.CorrectLevel.M,
         });
       }
+
+      const input = document.getElementById("setupVerifyCodeInput");
+      if (input) input.value = "";
+      const errorMsg = document.getElementById("setupModalError");
+      if (errorMsg) errorMsg.style.display = "none";
+
       modal.style.display = "flex";
+      if (input) input.focus();
+    }
+
+    function closeSetup2faModal() {
+      document.getElementById("setup2faModal").style.display = "none";
+    }
+
+    async function confirmAndEnable2fa(e) {
+      e.preventDefault();
+      const code = document.getElementById("setupVerifyCodeInput").value.trim();
+      const secret = getTotpSecret();
+      const isValid = await verifyTotpToken(code, secret);
+      const errorMsg = document.getElementById("setupModalError");
+
+      if (isValid) {
+        localStorage.setItem(AUTH_2FA_KEY, "true");
+        closeSetup2faModal();
+        update2faSettingsUI();
+        if (errorMsg) errorMsg.style.display = "none";
+        alert("🎉 ¡Google Authenticator vinculado y activado con éxito!\nAhora se te solicitará el código de 6 dígitos cada vez que inicies sesión.");
+      } else {
+        if (errorMsg) errorMsg.style.display = "block";
+        document.getElementById("setupVerifyCodeInput").value = "";
+        document.getElementById("setupVerifyCodeInput").focus();
+      }
+    }
+
+    function disable2fa() {
+      if (confirm("¿Estás seguro de desactivar la protección 2FA de Google Authenticator?\nTu panel volverá a entrar solo con tu usuario y contraseña.")) {
+        localStorage.removeItem(AUTH_2FA_KEY);
+        update2faSettingsUI();
+        alert("✔ Protección 2FA desactivada correctamente.");
+      }
+    }
+
+    function updateAdminCredentials(e) {
+      e.preventDefault();
+      const newUser = (document.getElementById("cfgAdminUsername").value || "").trim();
+      const newPass = (document.getElementById("cfgAdminPassword").value || "").trim();
+
+      if (!newUser) {
+        alert("El usuario no puede estar vacío.");
+        return;
+      }
+
+      localStorage.setItem(ADMIN_USER_KEY, newUser);
+      if (newPass) {
+        if (newPass.length < 4) {
+          alert("La contraseña debe tener al menos 4 caracteres.");
+          return;
+        }
+        localStorage.setItem(ADMIN_PASS_KEY, newPass);
+      }
+
+      document.getElementById("cfgAdminPassword").value = "";
+      alert("✔ ¡Credenciales de administrador guardadas correctamente!");
     }
 
     function updateMasterPin() {
