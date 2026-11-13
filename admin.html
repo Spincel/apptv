@@ -7,6 +7,48 @@
   <link rel="stylesheet" href="css/web.css">
   <script src="js/qrcode.min.js"></script>
   <style>
+    /* Scoped form styles for guaranteed beautiful layout */
+    .form-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+      margin-bottom: 22px !important;
+      text-align: left !important;
+    }
+    .form-label {
+      display: block !important;
+      font-size: 0.9rem !important;
+      font-weight: 600 !important;
+      color: #f3f4f6 !important;
+      margin-bottom: 2px !important;
+    }
+    .form-input {
+      display: block !important;
+      width: 100% !important;
+      padding: 13px 16px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      background: #141926 !important;
+      color: #ffffff !important;
+      font-size: 0.95rem !important;
+      box-sizing: border-box !important;
+      transition: all 0.2s ease !important;
+      font-family: inherit !important;
+    }
+    .form-input:focus {
+      border-color: #818cf8 !important;
+      outline: none !important;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.35) !important;
+      background: #181f30 !important;
+    }
+    .form-help {
+      display: block !important;
+      font-size: 0.8rem !important;
+      color: #9ca3af !important;
+      line-height: 1.4 !important;
+      margin-top: 4px !important;
+    }
     .admin-nav {
       display: flex;
       gap: 12px;
@@ -318,13 +360,13 @@
             <div class="form-group">
               <label class="form-label">Enlace de Pago Mercado Pago / Stripe (Aparece en el QR de la TV)</label>
               <input type="url" id="cfgCheckoutUrl" class="form-input" placeholder="https://mpago.la/XXXXX" value="https://www.keopstore.online/#pricing">
-              <span style="font-size:0.75rem; color:var(--text-muted);">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
+              <span class="form-help">Cuando la TV muestre el QR, enviará al usuario a este enlace con su ID de televisor.</span>
             </div>
 
             <div class="form-group">
               <label class="form-label">ID de Editor de Google AdSense / AdMob</label>
               <input type="text" id="cfgAdSenseId" class="form-input" placeholder="ca-pub-1234567890123456" value="ca-pub-8020880380669433">
-              <span style="font-size:0.75rem; color:var(--text-muted);">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
+              <span class="form-help">Tus banners laterales se vincularán a esta cuenta para recibir tus pagos.</span>
             </div>
 
             <div class="form-group">
@@ -364,7 +406,7 @@
                 Actualizar Clave
               </button>
             </div>
-            <span style="font-size:0.75rem; color:var(--text-muted);">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia.</span>
+            <span class="form-help">Por si pierdes tu celular, esta contraseña te permite entrar de emergencia.</span>
           </div>
         </div>
 
@@ -512,8 +554,12 @@
     }
 
     /* ================= AUTHENTICATION & ACCESS CONTROL ================= */
+    let isSessionUnlocked = false;
+
     function checkAdminAuth() {
-      const isAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === "authenticated";
+      // Check in-memory state or explicit temporary session token
+      const isRemembered = sessionStorage.getItem("smartertv_admin_remember_token") === "active";
+      const isAuth = isSessionUnlocked || isRemembered;
       const isSetupDone = localStorage.getItem("smartertv_2fa_configured") === "true";
 
       const loginGate = document.getElementById("admin2faLoginGate");
@@ -581,7 +627,7 @@
 
       if (isValid) {
         localStorage.setItem("smartertv_2fa_configured", "true");
-        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        isSessionUnlocked = true;
         if (errorMsg) errorMsg.style.display = "none";
         alert("🎉 ¡Google Authenticator vinculado con éxito!\nTu panel ahora está completamente blindado contra hackeos.");
         checkAdminAuth();
@@ -600,7 +646,7 @@
       const errorMsg = document.getElementById("login2faError");
 
       if (isValid) {
-        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        isSessionUnlocked = true;
         if (errorMsg) errorMsg.style.display = "none";
         checkAdminAuth();
       } else {
@@ -630,7 +676,7 @@
       const errorMsg = document.getElementById("emergencyLoginError");
 
       if (entered === masterPin) {
-        sessionStorage.setItem(AUTH_SESSION_KEY, "authenticated");
+        isSessionUnlocked = true;
         if (errorMsg) errorMsg.style.display = "none";
         checkAdminAuth();
       } else {
@@ -641,8 +687,13 @@
     }
 
     function adminLogout() {
-      sessionStorage.removeItem(AUTH_SESSION_KEY);
-      location.reload();
+      isSessionUnlocked = false;
+      sessionStorage.clear();
+      localStorage.removeItem("smartertv_admin_session");
+      localStorage.removeItem("smartertv_admin_session_v2");
+      localStorage.removeItem("smartertv_admin_session_v3");
+      localStorage.removeItem("smartertv_admin_remember_token");
+      checkAdminAuth();
     }
 
     function show2faBackupModal() {
