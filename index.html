@@ -245,7 +245,7 @@
               <li><span>✨</span> Activación automática instantánea</li>
             </ul>
 
-            <a href="#pricing" onclick="alert('Escanea el código QR desde tu app SmarterTV en la tele o contáctanos para activar tu código PRO.')" class="btn btn-gold" style="margin-top: auto;">
+            <a href="javascript:void(0)" onclick="openCheckoutModal()" class="btn btn-gold" style="margin-top: auto;">
               Obtener SmarterTV PRO
             </a>
           </div>
@@ -308,5 +308,50 @@
     </div>
   </footer>
 
+  <!-- Modal Checkout SmarterTV PRO -->
+  <div id="checkoutModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px);">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 32px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center;">
+      <div style="font-size: 2.2rem; margin-bottom: 8px;">👑</div>
+      <h3 style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin-bottom: 6px;">SmarterTV PRO</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
+        Disfruta de streaming 4K ilimitado sin cortes ni anuncios por solo <strong>$49 MXN / mes</strong>.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <!-- Botón Mercado Pago -->
+        <a id="mpCheckoutBtn" href="https://mpago.la/" target="_blank" class="btn btn-gold" style="padding: 13px; font-size: 0.95rem; justify-content: center; gap: 8px; text-decoration: none;">
+          <span>💳 Pagar con Mercado Pago / Tarjeta</span>
+        </a>
+
+        <!-- Botón WhatsApp -->
+        <a href="https://wa.me/?text=Hola,%20deseo%20activar%20mi%20suscripción%20SmarterTV%20PRO%20por%20$49%20MXN" target="_blank" class="btn btn-secondary" style="padding: 12px; font-size: 0.9rem; justify-content: center; gap: 8px; border-color: #25d366; color: #25d366; text-decoration: none;">
+          <span>💬 Pagar por WhatsApp / SPEI / OXXO</span>
+        </a>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 16px;">
+        📺 <strong>¿Estás en tu tele?</strong> Escanea el código QR desde tu pantalla con la cámara de tu celular para que tu TV se active automáticamente.
+      </div>
+
+      <button type="button" onclick="closeCheckoutModal()" class="btn btn-secondary" style="width: 100%; justify-content: center; font-size: 0.85rem;">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function openCheckoutModal() {
+      const savedLink = localStorage.getItem("smartertv_cfg_checkout_url");
+      const btn = document.getElementById("mpCheckoutBtn");
+      if (savedLink && savedLink.startsWith("http") && !savedLink.includes("#pricing")) {
+        btn.href = savedLink;
+      }
+      document.getElementById("checkoutModal").style.display = "flex";
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById("checkoutModal").style.display = "none";
+    }
+  </script>
 </body>
 </html>

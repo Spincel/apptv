@@ -249,26 +249,26 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-label">Ingresos del Mes (Membresías)</div>
-          <div class="stat-value" id="kpiRevenue">$2,450 MXN</div>
-          <div class="stat-sub">↑ 49 clientes activos</div>
+          <div class="stat-value" id="kpiRevenue">$0 MXN</div>
+          <div class="stat-sub" id="kpiRevenueSub">0 clientes activos</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-label">Ganancia Publicidad Estimada (AdSense)</div>
-          <div class="stat-value" id="kpiAdRevenue">$1,180 MXN</div>
-          <div class="stat-sub">↑ 236,000 impresiones</div>
+          <div class="stat-value" id="kpiAdRevenue">$0 MXN</div>
+          <div class="stat-sub" id="kpiAdRevenueSub">En aprobación por Google</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-label">Total Televisiones Conectadas</div>
-          <div class="stat-value" id="kpiDevices">184</div>
-          <div class="stat-sub">135 en plan gratis / 49 PRO</div>
+          <div class="stat-value" id="kpiDevices">0</div>
+          <div class="stat-sub" id="kpiDevicesSub">0 en plan gratis / 0 PRO</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-label">Tasa de Conversión a PRO</div>
-          <div class="stat-value" style="color: #fbbf24;">26.6%</div>
-          <div class="stat-sub">1 de cada 4 compra membresía</div>
+          <div class="stat-value" id="kpiConversion" style="color: #fbbf24;">0.0%</div>
+          <div class="stat-sub" id="kpiConversionSub">Basado en clientes registrados</div>
         </div>
       </div>
 
@@ -533,12 +533,30 @@
     // Standard RFC 4648 Base32 secret (16 chars, only A-Z and 2-7)
     const DEFAULT_TOTP_SECRET = "KEOPSIPTVSEC2345";
 
-    let licenses = [
-      { id: 1, client: "Carlos Mendoza (Tepic)", device: "TV-84A9F2", code: "PRO-849201", plan: "1 Mes", expires: "2026-12-12", status: "active" },
-      { id: 2, client: "Ana Laura Gutiérrez", device: "TV-12C8D9", code: "PRO-441920", plan: "3 Meses", expires: "2027-02-12", status: "active" },
-      { id: 3, client: "Marcos Peña (Guadalajara)", device: "TV-77F1E0", code: "PRO-992184", plan: "1 Mes", expires: "2026-11-20", status: "active" },
-      { id: 4, client: "Fernando Soto", device: "TV-33B2A1", code: "PRO-110293", plan: "1 Mes", expires: "2026-11-05", status: "expired" },
-    ];
+    let licenses = [];
+
+    function updateKpiStats() {
+      const activeLicenses = licenses.filter(l => l.status === "active");
+      const activeCount = activeLicenses.length;
+      const totalCount = licenses.length;
+      const totalRev = activeCount * 49;
+
+      const revElem = document.getElementById("kpiRevenue");
+      const revSub = document.getElementById("kpiRevenueSub");
+      if (revElem) revElem.textContent = `$${totalRev} MXN`;
+      if (revSub) revSub.textContent = `${activeCount} clientes activos`;
+
+      const devElem = document.getElementById("kpiDevices");
+      const devSub = document.getElementById("kpiDevicesSub");
+      if (devElem) devElem.textContent = `${totalCount}`;
+      if (devSub) devSub.textContent = `${totalCount} licencias registradas`;
+
+      const convElem = document.getElementById("kpiConversion");
+      if (convElem) {
+        const rate = totalCount > 0 ? ((activeCount / totalCount) * 100).toFixed(1) : "0.0";
+        convElem.textContent = `${rate}%`;
+      }
+    }
 
     /* ================= CRYPTOGRAPHIC TOTP (RFC 6238) ================= */
     async function verifyTotpToken(token, secretBase32, windowSteps = 1) {
@@ -947,6 +965,17 @@
         try { licenses = JSON.parse(saved); } catch(e){}
       }
       renderLicensesTable(licenses);
+      updateKpiStats();
+
+      // Load saved settings
+      const savedCheckout = localStorage.getItem("smartertv_cfg_checkout_url");
+      if (savedCheckout && document.getElementById("cfgCheckoutUrl")) {
+        document.getElementById("cfgCheckoutUrl").value = savedCheckout;
+      }
+      const savedPrice = localStorage.getItem("smartertv_cfg_price");
+      if (savedPrice && document.getElementById("cfgPrice")) {
+        document.getElementById("cfgPrice").value = savedPrice;
+      }
     }
 
     function renderLicensesTable(list) {
@@ -1021,6 +1050,7 @@
       licenses.unshift(newLic);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
       renderLicensesTable(licenses);
+      updateKpiStats();
       closeNewLicenseModal();
 
       navigator.clipboard.writeText(randomCode);
@@ -1041,6 +1071,7 @@
         lic.status = "active";
         localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
         renderLicensesTable(licenses);
+        updateKpiStats();
         alert(`Licencia de ${lic.client} renovada por 30 días más.`);
       }
     }
@@ -1050,6 +1081,7 @@
         licenses = licenses.filter(l => l.id !== id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
         renderLicensesTable(licenses);
+        updateKpiStats();
       }
     }
 
@@ -1061,7 +1093,15 @@
 
     function saveAdminSettings(e) {
       e.preventDefault();
-      alert("¡Configuración de pagos y AdSense guardada con éxito!");
+      const checkoutUrl = (document.getElementById("cfgCheckoutUrl").value || "").trim();
+      const adsenseId = (document.getElementById("cfgAdSenseId").value || "").trim();
+      const price = (document.getElementById("cfgPrice").value || "").trim();
+
+      localStorage.setItem("smartertv_cfg_checkout_url", checkoutUrl);
+      localStorage.setItem("smartertv_cfg_adsense_id", adsenseId);
+      localStorage.setItem("smartertv_cfg_price", price);
+
+      alert("🎉 ¡Configuración de pagos y AdSense guardada con éxito!");
     }
 
     document.addEventListener("DOMContentLoaded", checkAdminAuth);
