@@ -85,26 +85,54 @@ const App = (() => {
     const statusText = document.getElementById("loginStatusText");
     if (statusText) statusText.textContent = "Autenticando con el servidor...";
 
-    const cleanServer = config.server.trim().replace(/\/+$/, "");
+    let cleanServer = (config.server || "").trim().replace(/\/+$/, "");
+    if (!cleanServer) {
+      if (statusText) statusText.textContent = "Por favor ingresa la URL de tu servidor.";
+      openLoginModal();
+      return;
+    }
+    if (!cleanServer.startsWith("http://") && !cleanServer.startsWith("https://")) {
+      cleanServer = "http://" + cleanServer;
+    }
+    config.server = cleanServer;
+    saveConfig(config);
+
     const authUrl = `${cleanServer}/player_api.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}`;
 
     try {
-      const res = await fetch(authUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(authUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error("Cuenta expirada o bloqueada por el proveedor (Error 403)");
+        } else if (res.status === 404) {
+          throw new Error("Servidor no compatible o ruta no encontrada (Error 404)");
+        } else {
+          throw new Error(`Servidor respondió HTTP ${res.status}`);
+        }
+      }
+
       const data = await res.json();
 
-      if (data.user_info && data.user_info.auth === 1) {
+      if (data.user_info && (data.user_info.auth === 1 || data.user_info.status === "Active")) {
         closeLoginModal();
         updateUserInfoDisplay(data.user_info, data.server_info);
         await loadCatalogData();
       } else {
         const msg = data.user_info ? data.user_info.message : "Credenciales incorrectas";
-        throw new Error(msg || "Error de autenticación");
+        throw new Error(msg || "Error de autenticación. Verifica usuario y contraseña.");
       }
     } catch (err) {
       console.warn("Xtream auth failed:", err);
       if (statusText) {
-        statusText.textContent = `Error: ${err.message}. Verifica servidor y usuario.`;
+        if (err.name === "AbortError") {
+          statusText.textContent = "Error: Tiempo de espera agotado al conectar al servidor.";
+        } else {
+          statusText.textContent = `Error: ${err.message}`;
+        }
       }
       openLoginModal();
     }
@@ -347,9 +375,9 @@ const App = (() => {
   function openLoginModal() {
     const modal = document.getElementById("loginModal");
     if (modal) {
-      document.getElementById("cfgServerInput").value = config.server || "http://api.nerdtv.xyz";
-      document.getElementById("cfgUserInput").value = config.username || "Dell2026";
-      document.getElementById("cfgPassInput").value = config.password || "T402Nerdce6V";
+      document.getElementById("cfgServerInput").value = config.server || "";
+      document.getElementById("cfgUserInput").value = config.username || "";
+      document.getElementById("cfgPassInput").value = config.password || "";
       modal.style.display = "flex";
     }
   }
