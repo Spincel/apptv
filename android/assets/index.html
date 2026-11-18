@@ -133,6 +133,85 @@
     </div>
   </div>
 
+  <!-- Movie Detail Modal -->
+  <div id="movieDetailModal" class="modal-overlay" style="display: none;">
+    <div class="movie-modal-card">
+      <button type="button" id="closeMovieModalBtn" class="modal-close-icon" title="Cerrar">✕</button>
+
+      <div class="detail-modal-body">
+        <div class="detail-poster-wrapper">
+          <img id="movieDetailPoster" src="" alt="Poster" class="detail-poster" onerror="this.src='assets/mascot.png'">
+        </div>
+
+        <div class="detail-info">
+          <h2 id="movieDetailTitle" class="detail-title">Título de la Película</h2>
+
+          <div class="detail-meta">
+            <span id="movieDetailRating" class="detail-badge badge-rating">⭐ 0.0</span>
+            <span id="movieDetailCategory" class="detail-badge">Categoría</span>
+            <span id="movieDetailYear" class="detail-badge">Año</span>
+          </div>
+
+          <p id="movieDetailPlot" class="detail-plot">Sinopsis de la película...</p>
+
+          <div class="detail-actions">
+            <button type="button" id="playMovieDirectBtn" class="btn btn-primary" style="padding: 10px 22px; font-size: 0.95rem;">
+              ▶ Reproducir Película
+            </button>
+            <button type="button" id="favMovieBtn" class="btn btn-secondary" style="font-size: 0.85rem; padding: 10px 16px;">
+              ⭐ Guardar en Favoritos
+            </button>
+            <button type="button" id="closeMovieTextBtn" class="btn btn-secondary" style="font-size: 0.85rem; padding: 10px 16px;">
+              ✕ Volver
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Series Detail & Episode Selector Modal -->
+  <div id="seriesDetailModal" class="modal-overlay" style="display: none;">
+    <div class="series-modal-card">
+      <button type="button" id="closeSeriesModalBtn" class="modal-close-icon" title="Cerrar">✕</button>
+
+      <div class="detail-modal-body">
+        <div class="detail-poster-wrapper">
+          <img id="seriesDetailPoster" src="" alt="Poster" class="detail-poster" onerror="this.src='assets/mascot.png'">
+        </div>
+
+        <div class="detail-info">
+          <h2 id="seriesDetailTitle" class="detail-title">Título de la Serie</h2>
+
+          <div class="detail-meta">
+            <span id="seriesDetailRating" class="detail-badge badge-rating">⭐ 0.0</span>
+            <span id="seriesDetailCategory" class="detail-badge">Categoría</span>
+            <span id="seriesDetailRelease" class="detail-badge">Estreno</span>
+          </div>
+
+          <p id="seriesDetailPlot" class="detail-plot">Sinopsis de la serie...</p>
+
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button type="button" id="favSeriesBtn" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem;">
+              ⭐ Guardar en Favoritos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seasons Pills -->
+      <div class="series-seasons-bar" id="seriesSeasonsBar"></div>
+
+      <!-- Episodes Grid / List -->
+      <div class="series-episodes-container" id="seriesEpisodesContainer">
+        <div class="state-center" style="height: 160px; grid-column: 1 / -1;">
+          <div class="pulse-dot"></div>
+          <span>Cargando episodios...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Xtream Codes Login Modal -->
   <div id="loginModal" class="modal-overlay" style="display: none;">
     <div class="login-card">

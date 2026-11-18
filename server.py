@@ -31,6 +31,12 @@ async def privacy_handler(request: web.Request) -> web.FileResponse:
     return web.FileResponse(BASE_DIR / "privacy.html")
 
 
+@routes.get("/app")
+@routes.get("/app/")
+async def app_handler(request: web.Request) -> web.FileResponse:
+    return web.FileResponse(BASE_DIR / "android" / "assets" / "index.html")
+
+
 @routes.get("/download/smartertv.apk")
 async def apk_download_handler(request: web.Request) -> web.FileResponse:
     if not APK_PATH.is_file():
@@ -52,6 +58,9 @@ def create_app() -> web.Application:
     app.router.add_static("/css/", path=str(BASE_DIR / "css"), name="css")
     app.router.add_static("/js/", path=str(BASE_DIR / "js"), name="js")
     app.router.add_static("/downloads/", path=str(BASE_DIR / "downloads"), name="downloads")
+    app.router.add_static("/app/css/", path=str(BASE_DIR / "android" / "assets" / "css"), name="app_css")
+    app.router.add_static("/app/js/", path=str(BASE_DIR / "android" / "assets" / "js"), name="app_js")
+    app.router.add_static("/app/assets/", path=str(BASE_DIR / "android" / "assets" / "assets"), name="app_assets")
     
     return app
 
@@ -60,6 +69,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
     print("=" * 60)
     print(f"🚀 Portal Web SmarterTV iniciado en: http://0.0.0.0:{port}")
+    print(f"📺 Reproductor Web IPTV: http://0.0.0.0:{port}/app/")
     print(f"📥 Descarga directa APK: http://0.0.0.0:{port}/download/smartertv.apk")
     print(f"🔐 Panel de Administración: http://0.0.0.0:{port}/admin.html")
     print("=" * 60)
